@@ -22,10 +22,20 @@ cd "$WORKDIR"
 
 # 1) Host deps
 log "Installing build dependencies..."
+
+# Check /dev/null first
+if [[ ! -c /dev/null ]]; then
+  err "/dev/null is not a character device!"
+  err "Fix with: sudo mknod -m 666 /dev/null c 1 3"
+  exit 1
+fi
+
 case "$DISTRO" in
   ubuntu-24.04|debian-12)
-    apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    apt update || {
+      warn "apt update failed, trying to continue..."
+    }
+    DEBIAN_FRONTEND=noninteractive apt install -y --fix-broken \
       debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools \
       dosfstools unzip curl wget git rsync python3 python3-pip
     ;;
@@ -55,7 +65,21 @@ bootstrap_debian() {
   else
     debootstrap --arch=amd64 bookworm "$ROOTFS" http://deb.debian.org/debian/ || true
   fi
-  chroot "$ROOTFS" bash -c 'apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y linux-image-generic zsh curl wget git sudo locales'
+  
+  # Mount filesystems for chroot
+  mount --bind /dev "$ROOTFS/dev"
+  mount -t devpts devpts "$ROOTFS/dev/pts"
+  mount -t tmpfs tmpfs "$ROOTFS/dev/shm"
+  mount -t proc /proc "$ROOTFS/proc"
+  mount -t sysfs /sys "$ROOTFS/sys"
+  cp /etc/resolv.conf "$ROOTFS/etc/resolv.conf" || true
+  
+  # Update and install packages using apt
+  chroot "$ROOTFS" apt update
+  chroot "$ROOTFS" apt install -y --fix-broken linux-image-generic zsh curl wget git sudo locales
+  
+  # Unmount
+  umount -l "$ROOTFS/dev/pts" "$ROOTFS/dev/shm" "$ROOTFS/dev" "$ROOTFS/proc" "$ROOTFS/sys" 2>/dev/null || true
 }
 bootstrap_arch() {
   mkdir -p "$ROOTFS"
@@ -87,11 +111,11 @@ echo "127.0.0.1 localhost $HOSTNAME" > /etc/hosts
 locale-gen en_US.UTF-8 || true
 update-locale LANG=en_US.UTF-8 || true
 
-if command -v apt-get >/dev/null 2>&1; then
+if command -v apt >/dev/null 2>&1; then
   # Enable universe/multiverse repositories for Ubuntu
   sed -i 's/main$/main universe multiverse restricted/' /etc/apt/sources.list || true
-  apt-get update
-  apt-get install -y \
+  apt update
+  apt install -y \
     pipewire wireplumber pipewire-audio \
     network-manager \
     flatpak xdg-desktop-portal xdg-desktop-portal-gtk \
@@ -148,7 +172,7 @@ if [[ "__HAS_GO__" == "1" ]]; then
 fi
 
 if [[ "__HAS_NEOVIM__" == "1" ]]; then
-  if command -v apt-get >/dev/null 2>&1; then apt-get install -y neovim; fi
+  if command -v apt >/dev/null 2>&1; then apt install -y neovim; fi
   if command -v pacman >/dev/null 2>&1; then pacman -Sy --noconfirm neovim; fi
   if command -v dnf >/dev/null 2>&1; then dnf -y install neovim; fi
 fi
@@ -168,8 +192,8 @@ if [[ "__HAS_OLLAMA__" == "1" ]]; then
 fi
 
 if [[ "__NVIDIA__" == "1" ]]; then
-  if command -v apt-get >/dev/null 2>&1; then
-    apt-get install -y ubuntu-drivers-common
+  if command -v apt >/dev/null 2>&1; then
+    apt install -y ubuntu-drivers-common
     ubuntu-drivers autoinstall || true
   elif command -v pacman >/dev/null 2>&1; then
     pacman -Sy --noconfirm nvidia nvidia-utils
