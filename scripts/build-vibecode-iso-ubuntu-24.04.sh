@@ -154,11 +154,11 @@ if [[ "__HAS_NODE__" == "1" ]]; then
 fi
 if [[ "__HAS_BUN__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'curl -fsSL https://bun.sh/install | bash'
-  runuser -u "$USERNAME" -- bash -lc 'export PATH="$HOME/.bun/bin:$PATH"; bun --version'
+  echo 'export PATH="$HOME/.bun/bin:$PATH"' >> /home/$USERNAME/.zshrc
 fi
 if [[ "__HAS_DENO__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'curl -fsSL https://deno.land/install.sh | sh'
-  runuser -u "$USERNAME" -- bash -lc 'export PATH="$HOME/.deno/bin:$PATH"; deno --version'
+  echo 'export PATH="$HOME/.deno/bin:$PATH"' >> /home/$USERNAME/.zshrc
 fi
 if [[ "__HAS_PY__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'curl https://pyenv.run | bash'
