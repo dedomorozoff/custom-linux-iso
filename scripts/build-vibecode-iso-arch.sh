@@ -156,6 +156,7 @@ if command -v flatpak >/dev/null 2>&1; then
 fi
 
 chsh -s /usr/bin/zsh "$USERNAME" || true
+rm -rf /home/$USERNAME/.oh-my-zsh || true
 runuser -u "$USERNAME" -- bash -lc 'curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh | bash -s -- --unattended || true'
 runuser -u "$USERNAME" -- bash -lc 'curl -sS https://starship.rs/install.sh | sh -s -- -y || true'
 runuser -u "$USERNAME" -- bash -lc 'mkdir -p ~/.config && echo "eval $(starship init zsh)" >> ~/.zshrc'
@@ -165,11 +166,11 @@ if [[ "__HAS_NODE__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'export PATH="$HOME/.local/share/fnm:$PATH"; eval "$(fnm env)"; fnm install --lts; fnm default lts-latest'
 fi
 if [[ "__HAS_BUN__" == "1" ]]; then
-  runuser -u "$USERNAME" -- bash -lc 'curl -fsSL https://bun.sh/install | bash'
+  runuser -u "$USERNAME" -- bash -c 'if [ ! -f "$HOME/.bun/bin/bun" ]; then curl -fsSL https://bun.sh/install | bash; fi'
   echo 'export PATH="$HOME/.bun/bin:$PATH"' >> /home/$USERNAME/.zshrc
 fi
 if [[ "__HAS_DENO__" == "1" ]]; then
-  runuser -u "$USERNAME" -- bash -lc 'curl -fsSL https://deno.land/install.sh | sh'
+  runuser -u "$USERNAME" -- bash -c 'if [ ! -d "$HOME/.deno" ]; then curl -fsSL https://deno.land/install.sh | sh; fi'
   echo 'export PATH="$HOME/.deno/bin:$PATH"' >> /home/$USERNAME/.zshrc
 fi
 if [[ "__HAS_PY__" == "1" ]]; then
@@ -244,7 +245,7 @@ EOS
 # apply replacements
 sed -i "s/__USER__/dedo/g; s/__HOST__/vibecode/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__NVIDIA__/1/g" "$ROOTFS/tmp/customize.sh"
-sed -i "s/__FLATPAKS__/"dev.zed.Zed" "io.cursor.Cursor" "com.visualstudio.code"/g" "$ROOTFS/tmp/customize.sh"
+sed -i "s/__FLATPAKS__/dev.zed.Zed/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__HAS_NODE__/1/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__HAS_BUN__/1/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__HAS_DENO__/0/g" "$ROOTFS/tmp/customize.sh"

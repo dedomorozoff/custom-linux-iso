@@ -959,8 +959,7 @@ function buildScript(cfg: {
   const flatpaks: string[] = [];
   if (enableFlatpak) {
     if (editors.includes("zed")) flatpaks.push("dev.zed.Zed");
-    // Cursor is not available as Flatpak - it's a proprietary editor
-    if (editors.includes("vscode")) flatpaks.push("com.visualstudio.code");
+    // VS Code installed via .deb repository instead of Flatpak for faster install
   }
 
   const header = `#!/usr/bin/env bash
@@ -1097,6 +1096,13 @@ if command -v apt >/dev/null 2>&1; then
     udev systemd-timesyncd zsh git curl wget unzip jq fzf ripgrep tmux build-essential pkg-config \
     python3 python3-venv python3-pip \
     docker.io
+  
+  # Install VS Code via official Microsoft repository
+  curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/microsoft.gpg
+  echo "deb [arch=amd64] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
+  apt update
+  apt install -y code
+  
   systemctl enable NetworkManager || true
   systemctl enable docker || true
 elif command -v pacman >/dev/null 2>&1; then
@@ -1120,6 +1126,7 @@ if command -v flatpak >/dev/null 2>&1; then
 fi
 
 chsh -s /usr/bin/zsh "$USERNAME" || true
+rm -rf /home/$USERNAME/.oh-my-zsh || true
 runuser -u "$USERNAME" -- bash -lc 'curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh | bash -s -- --unattended || true'
 runuser -u "$USERNAME" -- bash -lc 'curl -sS https://starship.rs/install.sh | sh -s -- -y || true'
 runuser -u "$USERNAME" -- bash -lc 'mkdir -p ~/.config && echo "eval $(starship init zsh)" >> ~/.zshrc'
@@ -1129,11 +1136,11 @@ if [[ "__HAS_NODE__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'export PATH="$HOME/.local/share/fnm:$PATH"; eval "$(fnm env)"; fnm install --lts; fnm default lts-latest'
 fi
 if [[ "__HAS_BUN__" == "1" ]]; then
-  runuser -u "$USERNAME" -- bash -lc 'curl -fsSL https://bun.sh/install | bash'
+  runuser -u "$USERNAME" -- bash -c 'if [ ! -f "$HOME/.bun/bin/bun" ]; then curl -fsSL https://bun.sh/install | bash; fi'
   echo 'export PATH="$HOME/.bun/bin:$PATH"' >> /home/$USERNAME/.zshrc
 fi
 if [[ "__HAS_DENO__" == "1" ]]; then
-  runuser -u "$USERNAME" -- bash -lc 'curl -fsSL https://deno.land/install.sh | sh'
+  runuser -u "$USERNAME" -- bash -c 'if [ ! -d "$HOME/.deno" ]; then curl -fsSL https://deno.land/install.sh | sh; fi'
   echo 'export PATH="$HOME/.deno/bin:$PATH"' >> /home/$USERNAME/.zshrc
 fi
 if [[ "__HAS_PY__" == "1" ]]; then
