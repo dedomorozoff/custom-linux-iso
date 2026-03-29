@@ -1464,6 +1464,7 @@ xorriso -as mkisofs \
   -r -V "VIBE_LINUX" \
   -o "$OUT" \
   -J -joliet-long -l \
+  -udf \
   "$WORKDIR/iso" || {
   warn "xorriso failed, check logs"
   exit 1
