@@ -144,9 +144,9 @@ In LightDM config (`/etc/lightdm/lightdm.conf`) comment out `autologin-user=`.
 - PPA for fresh versions (neovim, git)
 - Flatpak from official PPA
 
-### Debian 12
+### Debian 13
 
-- debootstrap bookworm
+- debootstrap trixie
 - contrib and non-free-firmware included
 - Backports for new packages
 
@@ -156,7 +156,7 @@ In LightDM config (`/etc/lightdm/lightdm.conf`) comment out `autologin-user=`.
 - AUR helper (yay) for packages like cursor-bin
 - rolling release
 
-### Fedora 41
+### Fedora 43
 
 - dnf --installroot
 - RPM Fusion for multimedia

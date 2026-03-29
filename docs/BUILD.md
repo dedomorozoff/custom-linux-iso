@@ -146,9 +146,9 @@ git clone https://github.com/<user>/dotfiles /etc/skel/.dotfiles
 - PPA для свежих версий (neovim, git)
 - Flatpak из официального PPA
 
-### Debian 12
+### Debian 13
 
-- debootstrap bookworm
+- debootstrap trixie
 - Включены contrib и non-free-firmware
 - Backports для новых пакетов
 
@@ -158,7 +158,7 @@ git clone https://github.com/<user>/dotfiles /etc/skel/.dotfiles
 - AUR helper (yay) для пакетов типа cursor-bin
 - rolling release
 
-### Fedora 41
+### Fedora 43
 
 - dnf --installroot
 - RPM Fusion для multimedia

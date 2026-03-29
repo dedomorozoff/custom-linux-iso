@@ -6,7 +6,7 @@ Additionally, a graphical post-install wizard (TUI based on whiptail/zenity) is 
 
 ## Features
 
-- Base selection: Ubuntu 24.04 LTS, Debian 12, Arch Linux, Fedora 41
+- Base selection: Ubuntu 24.04 LTS, Debian 13, Arch Linux, Fedora 43
 - User, hostname, layout, NVIDIA drivers configuration
 - Editor installation with AI assistants
 - CLI agents for code auto-generation and refactoring
@@ -20,7 +20,7 @@ Additionally, a graphical post-install wizard (TUI based on whiptail/zenity) is 
 1. Open the app in a browser (locally `npm run dev` or on GitHub Pages).
 2. Configure settings: base, user, software list.
 3. Click "Download build.sh" or copy the script from the Script tab.
-4. Run the script on a Linux machine (Ubuntu/Debian 12+ recommended) as root.
+4. Run the script on a Linux machine (Ubuntu/Debian 13+ recommended) as root.
 
 ```bash
 sudo bash build-vibe-linux.sh
