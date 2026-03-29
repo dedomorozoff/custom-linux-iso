@@ -56,8 +56,13 @@ ROOTFS="$WORKDIR/rootfs"
 if mountpoint -q "$ROOTFS/sys" 2>/dev/null; then
   umount -l "$ROOTFS/sys" "$ROOTFS/proc" "$ROOTFS/dev" 2>/dev/null || true
 fi
-rm -rf "$ROOTFS"
-mkdir -p "$ROOTFS"
+
+# Skip bootstrap if rootfs already exists (cached)
+if [[ -d "$ROOTFS/usr/bin" ]]; then
+  log "Using cached rootfs (skip bootstrap)..."
+else
+  rm -rf "$ROOTFS"
+  mkdir -p "$ROOTFS"
 
 bootstrap_debian() {
   if [[ "$DISTRO" == "ubuntu-24.04" ]]; then
@@ -93,6 +98,7 @@ case "$DISTRO" in
   arch) bootstrap_arch ;;
   fedora-41) bootstrap_fedora ;;
 esac
+fi
 
 # 3) Chroot customization
 log "Customizing system in chroot..."
