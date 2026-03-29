@@ -936,12 +936,14 @@ locale-gen en_US.UTF-8 || true
 update-locale LANG=en_US.UTF-8 || true
 
 if command -v apt-get >/dev/null 2>&1; then
+  # Enable universe/multiverse repositories for Ubuntu
+  sed -i 's/main$/main universe multiverse restricted/' /etc/apt/sources.list || true
   apt-get update
   apt-get install -y \
     pipewire wireplumber pipewire-audio \
-    network-manager iwd \
-    flatpak xdg-desktop-portal xdg-desktop-portal-wlr \
-    fonts-firacode fonts-noto fonts-noto-color-emoji \
+    network-manager \
+    flatpak xdg-desktop-portal xdg-desktop-portal-gtk \
+    fonts-firacode fonts-noto-core fonts-noto-color-emoji \
     udev systemd-timesyncd zsh git curl wget unzip jq fzf ripgrep tmux build-essential pkg-config \
     python3 python3-venv python3-pip \
     docker.io
