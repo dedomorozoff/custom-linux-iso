@@ -1,5 +1,7 @@
 # Vibe Linux ISO Builder
 
+[🇬🇧 English version](README.en.md)
+
 Веб-конфигуратор для генерации bash-скрипта, который собирает собственный ISO-образ Linux для вайб-кодинга (programming with AI). Скрипт устанавливает современные редакторы (Zed, Cursor, VS Code, Neovim, Helix), AI-агентов (Continue, Aider, GPT-Engineer, Cline, OpenCode), языки (Node.js LTS, Python 3.12, Rust, Go, Bun, Deno) и инструменты разработки.
 
 Дополнительно в образ встраивается графический мастер пост-установки (TUI на whiptail/zenity), который запускается при первом старте live-сессии и позволяет доустановить выбранные компоненты.
