@@ -2,8 +2,8 @@ import { useMemo, useState, useEffect, useRef } from "react";
 
 type DistroBase = "ubuntu-24.04" | "debian-12" | "arch" | "fedora-41";
 type EditorOption = "zed" | "cursor" | "vscode" | "neovim" | "helix";
-type AIAgent = "continue" | "aider" | "gpt-engineer" | "opencode" | "cline";
-type LangRuntime = "node-lts" | "python-3.12" | "go-1.22" | "rust-stable" | "bun" | "deno";
+type AIAgent = "continue" | "aider" | "opencode" | "cline";
+type LangRuntime = "node-lts" | "python-system" | "go-1.26" | "rust-stable" | "bun" | "deno";
 type Tool = "git" | "gh" | "docker" | "podman" | "tmux" | "jq" | "fzf" | "ripgrep";
 type Theme = "dark" | "light";
 type Lang = "ru" | "en";
@@ -139,7 +139,6 @@ const editorCatalog: Record<EditorOption, { name: string; desc: string; gui: boo
 const agentCatalog: Record<AIAgent, { name: string; desc: string; key: string }> = {
   continue: { name: "Continue", desc: "Open-source AI assistant in IDE, RAG on your codebase", key: "CONTINUE_API_KEY" },
   aider: { name: "Aider", desc: "Terminal agent for git edits with LLM, great context", key: "OPENAI_API_KEY" },
-  "gpt-engineer": { name: "GPT-Engineer", desc: "Generate and refactor projects by prompt", key: "OPENAI_API_KEY" },
   opencode: { name: "OpenCode", desc: "Local agent, supports ollama and open endpoints", key: "OPENAI_BASE_URL" },
   cline: { name: "Cline (former)", desc: "Agent mode in editor, plan-act-verify", key: "ANTHROPIC_API_KEY" },
 };
@@ -148,8 +147,8 @@ const runtimeCatalog: Record<LangRuntime, { name: string; install: string }> = {
   "node-lts": { name: "Node.js LTS", install: "fnm" },
   bun: { name: "Bun", install: "install script" },
   deno: { name: "Deno", install: "install script" },
-  "python-3.12": { name: "Python 3.12", install: "pyenv" },
-  "go-1.22": { name: "Go 1.22", install: "tarball" },
+  "python-system": { name: "Python 3 (system)", install: "apt" },
+  "go-1.26": { name: "Go 1.26", install: "tarball" },
   "rust-stable": { name: "Rust stable", install: "rustup" },
 };
 
@@ -163,7 +162,7 @@ export default function App() {
   const [distro, setDistro] = useState<DistroBase>("ubuntu-24.04");
   const [editors, setEditors] = useState<EditorOption[]>(["zed", "cursor", "vscode", "neovim"]);
   const [agents, setAgents] = useState<AIAgent[]>(["continue", "aider", "cline"]);
-  const [runtimes, setRuntimes] = useState<LangRuntime[]>(["node-lts", "python-3.12", "rust-stable", "bun"]);
+  const [runtimes, setRuntimes] = useState<LangRuntime[]>(["node-lts", "python-system", "rust-stable", "bun"]);
   const [tools, setTools] = useState<Tool[]>(["git", "gh", "docker", "tmux", "fzf", "ripgrep", "jq"]);
   const [userName, setUserName] = useState("vibe");
   const [hostName, setHostName] = useState("vibecode");
@@ -1048,7 +1047,7 @@ bootstrap_debian() {
 
   # Update and install packages using apt
   chroot "$ROOTFS" apt update
-  chroot "$ROOTFS" apt install -y --fix-broken linux-image-generic zsh curl wget git sudo locales
+  chroot "$ROOTFS" apt install -y --fix-broken linux-image-generic zsh curl wget git sudo locales python3-full python3-pip python3-venv
 
   # Unmount
   umount -l "$ROOTFS/dev/random" "$ROOTFS/dev/urandom" "$ROOTFS/dev/pts" "$ROOTFS/dev/shm" "$ROOTFS/dev" "$ROOTFS/proc" "$ROOTFS/sys" 2>/dev/null || true
@@ -1081,8 +1080,16 @@ echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90_vibe
 echo "$HOSTNAME" > /etc/hostname
 echo "127.0.0.1 localhost $HOSTNAME" > /etc/hosts
 
-locale-gen en_US.UTF-8 || true
-update-locale LANG=en_US.UTF-8 || true
+locale-gen en_US.UTF-8 ru_RU.UTF-8 || true
+update-locale LANG=ru_RU.UTF-8 || true
+
+# Set Russian keyboard layout
+cat > /etc/default/keyboard << KBD
+XKBLAYOUT="us,ru"
+XKBVARIANT=""
+XKBOPTIONS="grp:alt_shift_toggle"
+BACKSPACE="guess"
+KBD
 
 if command -v apt >/dev/null 2>&1; then
   # Enable universe/multiverse repositories for Ubuntu
@@ -1094,7 +1101,7 @@ if command -v apt >/dev/null 2>&1; then
     flatpak xdg-desktop-portal xdg-desktop-portal-gtk \
     fonts-firacode fonts-noto-core fonts-noto-color-emoji \
     udev systemd-timesyncd zsh git curl wget unzip jq fzf ripgrep tmux build-essential pkg-config \
-    python3 python3-venv python3-pip \
+    python3-full python3-pip python3-venv \
     docker.io
   
   # Install VS Code via official Microsoft repository
@@ -1144,14 +1151,14 @@ if [[ "__HAS_DENO__" == "1" ]]; then
   echo 'export PATH="$HOME/.deno/bin:$PATH"' >> /home/$USERNAME/.zshrc
 fi
 if [[ "__HAS_PY__" == "1" ]]; then
-  runuser -u "$USERNAME" -- bash -lc 'curl https://pyenv.run | bash'
-  runuser -u "$USERNAME" -- bash -lc 'export PATH="$HOME/.pyenv/bin:$PATH"; eval "$(pyenv init -)"; pyenv install 3.12.4; pyenv global 3.12.4'
+  # Python 3 already installed via apt (python3-full)
+  echo "Python 3 is already installed from system repositories"
 fi
 if [[ "__HAS_RUST__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y'
 fi
 if [[ "__HAS_GO__" == "1" ]]; then
-  curl -fsSL https://go.dev/dl/go1.22.5.linux-amd64.tar.gz -o /tmp/go.tgz
+  curl -fsSL https://go.dev/dl/go1.26.0.linux-amd64.tar.gz -o /tmp/go.tgz
   tar -C /usr/local -xzf /tmp/go.tgz
   echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> /home/$USERNAME/.zshrc
 fi
@@ -1166,10 +1173,7 @@ if [[ "__HAS_HELIX__" == "1" ]]; then
 fi
 
 if [[ "__HAS_AIDER__" == "1" ]]; then
-  pip3 install --break-system-packages aider-chat || pip3 install aider-chat
-fi
-if [[ "__HAS_GPT_ENG__" == "1" ]]; then
-  pip3 install --break-system-packages gpt-engineer || pip3 install gpt-engineer
+  pip3 install --break-system-packages --ignore-installed aider-chat
 fi
 if [[ "__HAS_OLLAMA__" == "1" ]]; then
   curl -fsSL https://ollama.com/install.sh | sh
@@ -1227,13 +1231,12 @@ sed -i "s/__FLATPAKS__/${flatpaks.map(s => `"${s}"`).join(" ")}/g" "$ROOTFS/tmp/
 sed -i "s/__HAS_NODE__/${runtimes.includes("node-lts") ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__HAS_BUN__/${runtimes.includes("bun") ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__HAS_DENO__/${runtimes.includes("deno") ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
-sed -i "s/__HAS_PY__/${runtimes.includes("python-3.12") ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
+sed -i "s/__HAS_PY__/${runtimes.includes("python-system") ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__HAS_RUST__/${runtimes.includes("rust-stable") ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
-sed -i "s/__HAS_GO__/${runtimes.includes("go-1.22") ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
+sed -i "s/__HAS_GO__/${runtimes.includes("go-1.26") ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__HAS_NEOVIM__/${editors.includes("neovim") ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__HAS_HELIX__/${editors.includes("helix") ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__HAS_AIDER__/${agents.includes("aider") ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
-sed -i "s/__HAS_GPT_ENG__/${agents.includes("gpt-engineer") ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__HAS_OLLAMA__/${installOllama ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
 
 mkdir -p "$ROOTFS/etc/vibe"

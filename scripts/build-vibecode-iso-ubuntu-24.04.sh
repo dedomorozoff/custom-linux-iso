@@ -81,7 +81,7 @@ bootstrap_debian() {
   
   # Update and install packages using apt
   chroot "$ROOTFS" apt update
-  chroot "$ROOTFS" apt install -y --fix-broken linux-image-generic zsh curl wget git sudo locales
+  chroot "$ROOTFS" apt install -y --fix-broken linux-image-generic zsh curl wget git sudo locales python3-full python3-pip python3-venv
   
   # Unmount
   umount -l "$ROOTFS/dev/pts" "$ROOTFS/dev/shm" "$ROOTFS/dev" "$ROOTFS/proc" "$ROOTFS/sys" 2>/dev/null || true
@@ -114,8 +114,16 @@ echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90_vibe
 echo "$HOSTNAME" > /etc/hostname
 echo "127.0.0.1 localhost $HOSTNAME" > /etc/hosts
 
-locale-gen en_US.UTF-8 || true
-update-locale LANG=en_US.UTF-8 || true
+locale-gen en_US.UTF-8 ru_RU.UTF-8 || true
+update-locale LANG=ru_RU.UTF-8 || true
+
+# Set Russian keyboard layout
+cat > /etc/default/keyboard << KBD
+XKBLAYOUT="us,ru"
+XKBVARIANT=""
+XKBOPTIONS="grp:alt_shift_toggle"
+BACKSPACE="guess"
+KBD
 
 if command -v apt >/dev/null 2>&1; then
   # Enable universe/multiverse repositories for Ubuntu
@@ -175,14 +183,14 @@ if [[ "__HAS_DENO__" == "1" ]]; then
   echo 'export PATH="$HOME/.deno/bin:$PATH"' >> /home/$USERNAME/.zshrc
 fi
 if [[ "__HAS_PY__" == "1" ]]; then
-  runuser -u "$USERNAME" -- bash -lc 'curl https://pyenv.run | bash'
-  runuser -u "$USERNAME" -- bash -lc 'export PATH="$HOME/.pyenv/bin:$PATH"; eval "$(pyenv init -)"; pyenv install 3.12.4; pyenv global 3.12.4'
+  # Python 3 already installed via apt (python3-full)
+  echo "Python 3 is already installed from system repositories"
 fi
 if [[ "__HAS_RUST__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y'
 fi
 if [[ "__HAS_GO__" == "1" ]]; then
-  curl -fsSL https://go.dev/dl/go1.22.5.linux-amd64.tar.gz -o /tmp/go.tgz
+  curl -fsSL https://go.dev/dl/go1.26.0.linux-amd64.tar.gz -o /tmp/go.tgz
   tar -C /usr/local -xzf /tmp/go.tgz
   echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> /home/$USERNAME/.zshrc
 fi
@@ -197,10 +205,7 @@ if [[ "__HAS_HELIX__" == "1" ]]; then
 fi
 
 if [[ "__HAS_AIDER__" == "1" ]]; then
-  pip3 install --break-system-packages aider-chat || pip3 install aider-chat
-fi
-if [[ "__HAS_GPT_ENG__" == "1" ]]; then
-  pip3 install --break-system-packages gpt-engineer || pip3 install gpt-engineer
+  pip3 install --break-system-packages --ignore-installed aider-chat
 fi
 if [[ "__HAS_OLLAMA__" == "1" ]]; then
   curl -fsSL https://ollama.com/install.sh | sh
