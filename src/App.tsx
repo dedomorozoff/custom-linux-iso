@@ -159,6 +159,7 @@ function classNames(...xs: Array<string | false | null | undefined>) {
 export default function App() {
   const [theme, setTheme] = useState<Theme>("dark");
   const [lang, setLang] = useState<Lang>("ru");
+  const [buildType, setBuildType] = useState<"lite" | "full">("full");
   const [distro, setDistro] = useState<DistroBase>("ubuntu-24.04");
   const [editors, setEditors] = useState<EditorOption[]>(["zed", "cursor", "vscode", "neovim"]);
   const [agents, setAgents] = useState<AIAgent[]>(["continue", "aider", "cline"]);
@@ -197,7 +198,8 @@ export default function App() {
     includeNvidia,
     enableFlatpak,
     installOllama,
-  }), [distro, editors, agents, runtimes, tools, userName, hostName, includeNvidia, enableFlatpak, installOllama]);
+    buildType,
+  }), [distro, editors, agents, runtimes, tools, userName, hostName, includeNvidia, enableFlatpak, installOllama, buildType]);
 
   function copyScript() {
     navigator.clipboard.writeText(script).then(() => {
@@ -211,7 +213,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `build-vibecode-iso-${distro}.sh`;
+    a.download = `build-vibe-${buildType}-${distro}.sh`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -441,6 +443,61 @@ export default function App() {
                         </button>
                       );
                     })}
+                  </div>
+                </Field>
+
+                <Field label={lang === "ru" ? "Тип сборки" : "Build Type"}>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setBuildType("lite")}
+                      className={classNames(
+                        "rounded-2xl border p-4 text-left transition",
+                        buildType === "lite"
+                          ? theme === "dark"
+                            ? "border-emerald-500/50 bg-emerald-500/10"
+                            : "border-emerald-500/50 bg-emerald-50"
+                          : theme === "dark"
+                          ? "border-zinc-800 bg-zinc-900 hover:bg-zinc-900/80"
+                          : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={classNames(
+                          "h-4 w-4 rounded-full border-2 grid place-items-center",
+                          buildType === "lite" ? "border-emerald-400" : "border-zinc-500"
+                        )}>
+                          {buildType === "lite" && <div className="h-2 w-2 rounded-full bg-emerald-500" />}
+                        </div>
+                        <div className="font-semibold">Lite</div>
+                      </div>
+                      <div className="mt-1 text-xs opacity-70">~600 МБ, быстро</div>
+                      <div className="mt-1 text-[11px] opacity-60">Софт ставится через wizard</div>
+                    </button>
+                    <button
+                      onClick={() => setBuildType("full")}
+                      className={classNames(
+                        "rounded-2xl border p-4 text-left transition",
+                        buildType === "full"
+                          ? theme === "dark"
+                            ? "border-indigo-500/50 bg-indigo-500/10"
+                            : "border-indigo-500/50 bg-indigo-50"
+                          : theme === "dark"
+                          ? "border-zinc-800 bg-zinc-900 hover:bg-zinc-900/80"
+                          : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={classNames(
+                          "h-4 w-4 rounded-full border-2 grid place-items-center",
+                          buildType === "full" ? "border-indigo-400" : "border-zinc-500"
+                        )}>
+                          {buildType === "full" && <div className="h-2 w-2 rounded-full bg-indigo-500" />}
+                        </div>
+                        <div className="font-semibold">Full</div>
+                      </div>
+                      <div className="mt-1 text-xs opacity-70">~2.5 ГБ, всё включено</div>
+                      <div className="mt-1 text-[11px] opacity-60">Софт предустановлен</div>
+                    </button>
                   </div>
                 </Field>
 
@@ -952,8 +1009,9 @@ function buildScript(cfg: {
   includeNvidia: boolean;
   enableFlatpak: boolean;
   installOllama: boolean;
+  buildType: "lite" | "full";
 }) {
-  const { distro, editors, agents, runtimes, tools, userName, hostName, includeNvidia, enableFlatpak, installOllama } = cfg;
+  const { distro, editors, agents, runtimes, tools, userName, hostName, includeNvidia, enableFlatpak, installOllama, buildType } = cfg;
 
   const flatpaks: string[] = [];
   if (enableFlatpak) {
@@ -975,6 +1033,7 @@ OUTDIR="\${OUTDIR:-$PWD/out}"
 USERNAME=${JSON.stringify(userName)}
 HOSTNAME=${JSON.stringify(hostName)}
 DISTRO=${JSON.stringify(distro)}
+BUILD_TYPE=${JSON.stringify(buildType)}
 
 log() { printf "\\033[1;34m[vibe]\\033[0m %s\\n" "$*"; }
 warn() { printf "\\033[1;33m[!]\\033[0m %s\\n" "$*"; }
@@ -1095,20 +1154,28 @@ if command -v apt >/dev/null 2>&1; then
   # Enable universe/multiverse repositories for Ubuntu
   sed -i 's/main$/main universe multiverse restricted/' /etc/apt/sources.list || true
   apt update
+  
+  # Base packages for all builds
   apt install -y \
     pipewire wireplumber pipewire-audio \
     network-manager \
     flatpak xdg-desktop-portal xdg-desktop-portal-gtk \
     fonts-firacode fonts-noto-core fonts-noto-color-emoji \
-    udev systemd-timesyncd zsh git curl wget unzip jq fzf ripgrep tmux build-essential pkg-config \
-    python3-full python3-pip python3-venv \
-    docker.io
+    udev systemd-timesyncd zsh git curl wget unzip jq fzf ripgrep tmux \
+    python3-full python3-pip python3-venv
   
-  # Install VS Code via official Microsoft repository
-  curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/microsoft.gpg
-  echo "deb [arch=amd64] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
-  apt update
-  apt install -y code
+  # Full build: install additional packages
+  if [[ "${buildType.toUpperCase()}" == "FULL" ]]; then
+    apt install -y \
+      build-essential pkg-config \
+      docker.io
+    
+    # Install VS Code via official Microsoft repository
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/microsoft.gpg
+    echo "deb [arch=amd64] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
+    apt update
+    apt install -y code
+  fi
   
   systemctl enable NetworkManager || true
   systemctl enable docker || true
@@ -1126,10 +1193,13 @@ fi
 
 if command -v flatpak >/dev/null 2>&1; then
   flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+  # Full build: install Flatpak apps
+  if [[ "${BUILD_TYPE}" == "full" ]]; then
   FLATPAKS=(__FLATPAKS__)
   if [ ${"$"}{#FLATPAKS[@]} -gt 0 ]; then
     flatpak install -y flathub "${"$"}{FLATPAKS[@]}" || true
   fi
+  fi  # BUILD_TYPE full
 fi
 
 chsh -s /usr/bin/zsh "$USERNAME" || true
@@ -1138,6 +1208,8 @@ runuser -u "$USERNAME" -- bash -lc 'curl -fsSL https://raw.githubusercontent.com
 runuser -u "$USERNAME" -- bash -lc 'curl -sS https://starship.rs/install.sh | sh -s -- -y || true'
 runuser -u "$USERNAME" -- bash -lc 'mkdir -p ~/.config && echo "eval $(starship init zsh)" >> ~/.zshrc'
 
+# Full build: install languages and tools
+if [[ "${BUILD_TYPE}" == "full" ]]; then
 if [[ "__HAS_NODE__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'curl -fsSL https://fnm.vercel.app/install | bash'
   runuser -u "$USERNAME" -- bash -lc 'export PATH="$HOME/.local/share/fnm:$PATH"; eval "$(fnm env)"; fnm install --lts; fnm default lts-latest'
@@ -1150,10 +1222,6 @@ if [[ "__HAS_DENO__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -c 'if [ ! -d "$HOME/.deno" ]; then curl -fsSL https://deno.land/install.sh | sh; fi'
   echo 'export PATH="$HOME/.deno/bin:$PATH"' >> /home/$USERNAME/.zshrc
 fi
-if [[ "__HAS_PY__" == "1" ]]; then
-  # Python 3 already installed via apt (python3-full)
-  echo "Python 3 is already installed from system repositories"
-fi
 if [[ "__HAS_RUST__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y'
 fi
@@ -1162,6 +1230,7 @@ if [[ "__HAS_GO__" == "1" ]]; then
   tar -C /usr/local -xzf /tmp/go.tgz
   echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> /home/$USERNAME/.zshrc
 fi
+fi  # BUILD_TYPE full
 
 if [[ "__HAS_NEOVIM__" == "1" ]]; then
   if command -v apt >/dev/null 2>&1; then apt install -y neovim; fi
@@ -1172,6 +1241,8 @@ if [[ "__HAS_HELIX__" == "1" ]]; then
   if command -v cargo >/dev/null 2>&1; then runuser -u "$USERNAME" -- bash -lc 'cargo install --locked helix'; fi
 fi
 
+# Full build: install AI agents
+if [[ "${BUILD_TYPE}" == "full" ]]; then
 if [[ "__HAS_AIDER__" == "1" ]]; then
   pip3 install --break-system-packages --ignore-installed aider-chat
 fi
@@ -1179,6 +1250,7 @@ if [[ "__HAS_OLLAMA__" == "1" ]]; then
   curl -fsSL https://ollama.com/install.sh | sh
   systemctl enable ollama || true
 fi
+fi  # BUILD_TYPE full
 
 if [[ "__NVIDIA__" == "1" ]]; then
   if command -v apt >/dev/null 2>&1; then
