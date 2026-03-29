@@ -1162,7 +1162,8 @@ if command -v apt >/dev/null 2>&1; then
     flatpak xdg-desktop-portal xdg-desktop-portal-gtk \
     fonts-firacode fonts-noto-core fonts-noto-color-emoji \
     udev systemd-timesyncd zsh git curl wget unzip jq fzf ripgrep tmux \
-    python3-full python3-pip python3-venv
+    python3-full python3-pip python3-venv \
+    systemd
   
   # Full build: install additional packages
   if [[ "${buildType.toUpperCase()}" == "FULL" ]]; then
@@ -1275,23 +1276,121 @@ cat > /usr/local/bin/vibe-wizard << 'WIZ'
 #!/usr/bin/env bash
 set -e
 CONFIG=/etc/vibe/config.json
-echo "Vibe post-install wizard"
-echo "Config: $CONFIG"
-if command -v whiptail >/dev/null 2>&1; then
-  SEL=$(whiptail --title "Vibe Wizard" --checklist "Выберите компоненты" 20 78 8 \
-    "zed" "Zed editor" ON \
-    "cursor" "Cursor editor" ON \
-    "vscode" "VS Code" ON \
-    "neovim" "Neovim" ON \
-    "continue" "Continue AI" ON \
-    "aider" "Aider agent" ON \
-    "ollama" "Ollama local LLM" ON \
-    "docker" "Docker" ON 3>&1 1>&2 2>&3) || true
-  echo "Selected: $SEL" > /tmp/vibe-wizard.log
+
+log() { printf "\\e[1;34m[wizard]\\e[0m %s\\n" "$*"; }
+
+echo "╔════════════════════════════════════════╗"
+echo "║   Vibe Linux Post-Install Wizard      ║"
+echo "╚════════════════════════════════════════╝"
+echo ""
+
+# Read config
+if [ -f "$CONFIG" ]; then
+  source <(jq -r 'to_entries | .[] | "\(.key)=\(.value)"' "$CONFIG" 2>/dev/null || true)
 fi
-echo "Готово. При желании установите выбранные компоненты вручную или через скрипт."
+
+# Install editors
+log "Installing editors..."
+if command -v flatpak >/dev/null 2>&1; then
+  if echo "$editors" | grep -q "zed"; then
+    log "Installing Zed via Flatpak..."
+    flatpak install -y flathub dev.zed.Zed
+  fi
+fi
+if echo "$editors" | grep -q "vscode"; then
+  if ! command -v code >/dev/null 2>&1; then
+    log "Installing VS Code..."
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/microsoft.gpg
+    echo "deb [arch=amd64] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
+    apt update && apt install -y code
+  fi
+fi
+
+# Install languages
+log "Installing languages..."
+if echo "$runtimes" | grep -q "node"; then
+  if ! command -v node >/dev/null 2>&1; then
+    log "Installing Node.js via fnm..."
+    curl -fsSL https://fnm.vercel.app/install | bash
+    export PATH="$HOME/.local/share/fnm:$PATH"
+    eval "$(fnm env)"
+    fnm install --lts
+  fi
+fi
+if echo "$runtimes" | grep -q "bun"; then
+  if [ ! -f "$HOME/.bun/bin/bun" ]; then
+    log "Installing Bun..."
+    curl -fsSL https://bun.sh/install | bash
+  fi
+fi
+if echo "$runtimes" | grep -q "go"; then
+  if ! command -v go >/dev/null 2>&1; then
+    log "Installing Go..."
+    curl -fsSL https://go.dev/dl/go1.26.0.linux-amd64.tar.gz -o /tmp/go.tgz
+    tar -C /usr/local -xzf /tmp/go.tgz
+  fi
+fi
+if echo "$runtimes" | grep -q "rust"; then
+  if ! command -v cargo >/dev/null 2>&1; then
+    log "Installing Rust..."
+    curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  fi
+fi
+
+# Install AI agents
+log "Installing AI agents..."
+if echo "$agents" | grep -q "aider"; then
+  if ! command -v aider >/dev/null 2>&1; then
+    log "Installing aider-chat..."
+    pip3 install --break-system-packages --ignore-installed aider-chat
+  fi
+fi
+if [[ "$ollama" == "true" ]]; then
+  if ! command -v ollama >/dev/null 2>&1; then
+    log "Installing Ollama..."
+    curl -fsSL https://ollama.com/install.sh | sh
+    systemctl enable ollama --now
+  fi
+fi
+
+# Install Docker
+if echo "$tools" | grep -q "docker"; then
+  if ! command -v docker >/dev/null 2>&1; then
+    log "Installing Docker..."
+    apt install -y docker.io
+    systemctl enable docker --now
+  fi
+fi
+
+log "Done! Restart to apply changes."
+echo ""
+echo "╔════════════════════════════════════════╗"
+echo "║     Installation complete!             ║"
+echo "╚════════════════════════════════════════╝"
 WIZ
 chmod +x /usr/local/bin/vibe-wizard
+
+# Create systemd service for auto-start wizard (Lite build only)
+if [[ "${BUILD_TYPE}" == "lite" ]]; then
+  mkdir -p /etc/systemd/system
+  cat > /etc/systemd/system/vibe-wizard.service << 'SVCEOF'
+[Unit]
+Description=Vibe Post-Install Wizard
+After=graphical-session.target
+ConditionPathExists=!/home/${USERNAME}/.vibe-wizard-done
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/vibe-wizard
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=graphical-session.target
+SVCEOF
+  systemctl enable vibe-wizard.service
+fi
 
 echo "Custom chroot done."
 EOS
