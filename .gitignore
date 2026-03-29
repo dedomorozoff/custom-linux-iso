@@ -70,3 +70,6 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 tsconfig.tsbuildinfo
+
+# Qwen
+.qwen/
