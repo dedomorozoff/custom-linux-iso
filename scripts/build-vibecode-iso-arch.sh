@@ -68,7 +68,7 @@ bootstrap_debian() {
   if [[ "$DISTRO" == "ubuntu-24.04" ]]; then
     debootstrap --arch=amd64 noble "$ROOTFS" http://archive.ubuntu.com/ubuntu/ || true
   else
-    debootstrap --arch=amd64 bookworm "$ROOTFS" http://deb.debian.org/debian/ || true
+    debootstrap --arch=amd64 trixie "$ROOTFS" http://deb.debian.org/debian/ || true
   fi
   
   # Mount filesystems for chroot
@@ -91,12 +91,12 @@ bootstrap_arch() {
   pacstrap -c "$ROOTFS" base linux linux-firmware zsh sudo curl wget git
 }
 bootstrap_fedora() {
-  dnf --releasever=41 --setopt=install_weak_deps=False --installroot="$ROOTFS" -y install @core kernel zsh sudo curl wget git
+  dnf --releasever=43 --setopt=install_weak_deps=False --installroot="$ROOTFS" -y install @core kernel zsh sudo curl wget git
 }
 case "$DISTRO" in
-  ubuntu-24.04|debian-12) bootstrap_debian ;;
+  ubuntu-24.04|debian-13) bootstrap_debian ;;
   arch) bootstrap_arch ;;
-  fedora-41) bootstrap_fedora ;;
+  fedora-43) bootstrap_fedora ;;
 esac
 fi
 

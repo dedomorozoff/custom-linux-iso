@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 
-type DistroBase = "ubuntu-24.04" | "debian-12" | "arch" | "fedora-41";
+type DistroBase = "ubuntu-24.04" | "debian-13" | "arch" | "fedora-43";
 type EditorOption = "zed" | "cursor" | "vscode" | "neovim" | "helix";
 type AIAgent = "continue" | "aider" | "opencode" | "cline";
 type LangRuntime = "node-lts" | "python-system" | "go-1.26" | "rust-stable" | "bun" | "deno";
@@ -108,11 +108,11 @@ const distroInfo: Record<DistroBase, { label: string; isoBase: string; pkg: stri
     pkg: "apt",
     desc: "Stable LTS base, excellent driver support and snap/flatpak",
   },
-  "debian-12": {
-    label: "Debian 12 Bookworm",
+  "debian-13": {
+    label: "Debian 13 Trixie",
     isoBase: "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/",
     pkg: "apt",
-    desc: "Minimalism and stability, ideal for clean image builds",
+    desc: "Latest stable release, minimalism and stability",
   },
   arch: {
     label: "Arch (rolling)",
@@ -120,8 +120,8 @@ const distroInfo: Record<DistroBase, { label: string; isoBase: string; pkg: stri
     pkg: "pacman",
     desc: "Fresh packages, AUR, flexible customization for advanced users",
   },
-  "fedora-41": {
-    label: "Fedora 41 Workstation",
+  "fedora-43": {
+    label: "Fedora 43 Workstation",
     isoBase: "https://fedoraproject.org/workstation/download/",
     pkg: "dnf",
     desc: "Modern stack, Wayland by default, fresh kernels",
@@ -1031,7 +1031,7 @@ bootstrap_debian() {
   if [[ "$DISTRO" == "ubuntu-24.04" ]]; then
     debootstrap --arch=amd64 noble "$ROOTFS" http://archive.ubuntu.com/ubuntu/ || true
   else
-    debootstrap --arch=amd64 bookworm "$ROOTFS" http://deb.debian.org/debian/ || true
+    debootstrap --arch=amd64 trixie "$ROOTFS" http://deb.debian.org/debian/ || true
   fi
 
   # Mount filesystems for chroot
@@ -1057,12 +1057,12 @@ bootstrap_arch() {
   pacstrap -c "$ROOTFS" base linux linux-firmware zsh sudo curl wget git
 }
 bootstrap_fedora() {
-  dnf --releasever=41 --setopt=install_weak_deps=False --installroot="$ROOTFS" -y install @core kernel zsh sudo curl wget git
+  dnf --releasever=43 --setopt=install_weak_deps=False --installroot="$ROOTFS" -y install @core kernel zsh sudo curl wget git
 }
 case "$DISTRO" in
-  ubuntu-24.04|debian-12) bootstrap_debian ;;
+  ubuntu-24.04|debian-13) bootstrap_debian ;;
   arch) bootstrap_arch ;;
-  fedora-41) bootstrap_fedora ;;
+  fedora-43) bootstrap_fedora ;;
 esac
 fi
 
