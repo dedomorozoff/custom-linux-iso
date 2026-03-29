@@ -6,48 +6,142 @@ type AIAgent = "continue" | "aider" | "gpt-engineer" | "opencode" | "cline";
 type LangRuntime = "node-lts" | "python-3.12" | "go-1.22" | "rust-stable" | "bun" | "deno";
 type Tool = "git" | "gh" | "docker" | "podman" | "tmux" | "jq" | "fzf" | "ripgrep";
 type Theme = "dark" | "light";
+type Lang = "ru" | "en";
+
+const translations: Record<Lang, Record<string, string>> = {
+  ru: {
+    title: "Vibe Linux Builder",
+    subtitle: "ISO для вайб-кодинга с AI",
+    heroTitle: "Дистрибутив Linux для вайб-кодинга",
+    heroDesc: "Генерируйте скрипт сборки ISO на базе Ubuntu/Debian/Arch/Fedora с современным стеком: Zed, Cursor, VS Code, Neovim, Docker, Ollama, Node, Python, Rust и AI-агентами (Continue, Aider, Cline и др.). В комплекте — графический мастер пост-установки для выбора ПО.",
+    openWizard: "Открыть мастер установки",
+    viewScript: "Посмотреть скрипт",
+    feature1: "Автологин в live-сессию",
+    feature2: "Wayland по умолчанию",
+    feature3: "Nix/Devbox (опционально)",
+    configTitle: "Конфигуратор сборки",
+    configDesc: "Выберите базу и компоненты. Скрипт обновится автоматически.",
+    distroLabel: "Базовый дистрибутив",
+    userLabel: "Пользователь и система",
+    userName: "Имя пользователя",
+    hostname: "Hostname",
+    nvidia: "Драйверы NVIDIA",
+    nvidiaHint: "Проприетарные, для CUDA и игр",
+    flatpak: "Flatpak + Flathub",
+    flatpakHint: "Контейнеризованные приложения",
+    ollama: "Ollama (LLM локально)",
+    ollamaHint: "llama.cpp, модели on-device",
+    editors: "Редакторы",
+    agents: "AI-агенты и ассистенты",
+    runtimes: "Среды выполнения и языки",
+    scriptTitle: "Сгенерированный скрипт",
+    copy: "Скопировать",
+    copied: "Скопировано ✓",
+    download: "Скачать .sh",
+    scriptNote: "Скрипт создаёт загрузочный ISO с предустановленным стеком для разработки. Требуются права root и ~25–40 ГБ места.",
+    defaultTitle: "Что входит по умолчанию",
+    wizardTitle: "Мастер пост-установки",
+    wizardDesc: "Графический wizard при первом запуске Live-сессии позволяет выбрать редакторы, AI-агентов, языки и ключи API. Конфиги сохраняются в persistent overlay.",
+    openDemo: "Открыть демо мастера",
+    catalogTitle: "Каталог AI-инструментов",
+    quickStart: "Быстрый старт",
+    step1: "Скачайте скрипт и запустите на совместимом хосте (Ubuntu/Debian/Arch/Fedora).",
+    step2: "Скрипт скачает базовый ISO, распакует squashfs, добавит пакеты и wizard.",
+    step3: "Соберите финальный ISO и запишите на USB через balenaEtcher или dd.",
+    step4: "Загрузитесь в Live-режим, мастер предложит выбрать компоненты.",
+    step5: "Установите систему или используйте persistent USB.",
+    warning: "Внимание: сборка ISO требует ~20–30 ГБ и может занять 30–90 минут в зависимости от скорости сети и CPU.",
+    footer: "Сделано для разработчиков, которые любят вайб-кодинг с AI",
+    noTrack: "Не требует регистрации. Никаких трекеров. MIT License.",
+  },
+  en: {
+    title: "Vibe Linux Builder",
+    subtitle: "AI-powered coding ISO",
+    heroTitle: "Linux distro for vibe coding",
+    heroDesc: "Generate ISO build scripts based on Ubuntu/Debian/Arch/Fedora with modern stack: Zed, Cursor, VS Code, Neovim, Docker, Ollama, Node, Python, Rust and AI agents (Continue, Aider, Cline etc.). Includes graphical post-install wizard.",
+    openWizard: "Open Setup Wizard",
+    viewScript: "View Script",
+    feature1: "Auto-login live session",
+    feature2: "Wayland by default",
+    feature3: "Nix/Devbox (optional)",
+    configTitle: "Build Configurator",
+    configDesc: "Select base and components. Script updates automatically.",
+    distroLabel: "Base Distribution",
+    userLabel: "User & System",
+    userName: "Username",
+    hostname: "Hostname",
+    nvidia: "NVIDIA Drivers",
+    nvidiaHint: "Proprietary, for CUDA and gaming",
+    flatpak: "Flatpak + Flathub",
+    flatpakHint: "Containerized applications",
+    ollama: "Ollama (Local LLM)",
+    ollamaHint: "llama.cpp, on-device models",
+    editors: "Editors",
+    agents: "AI Agents & Assistants",
+    runtimes: "Runtimes & Languages",
+    scriptTitle: "Generated Script",
+    copy: "Copy",
+    copied: "Copied ✓",
+    download: "Download .sh",
+    scriptNote: "Script creates bootable ISO with pre-installed dev stack. Requires root and ~25-40GB space.",
+    defaultTitle: "What's Included",
+    wizardTitle: "Post-Install Wizard",
+    wizardDesc: "Graphical wizard on first Live session boot lets you select editors, AI agents, languages and API keys. Configs saved to persistent overlay.",
+    openDemo: "Open Demo Wizard",
+    catalogTitle: "AI Tools Catalog",
+    quickStart: "Quick Start",
+    step1: "Download script and run on compatible host (Ubuntu/Debian/Arch/Fedora).",
+    step2: "Script downloads base ISO, unpacks squashfs, adds packages and wizard.",
+    step3: "Build final ISO and write to USB via balenaEtcher or dd.",
+    step4: "Boot to Live mode, wizard offers component selection.",
+    step5: "Install system or use persistent USB.",
+    warning: "Warning: ISO build requires ~20-30GB and takes 30-90 min depending on network and CPU speed.",
+    footer: "Made for developers who love vibe coding with AI",
+    noTrack: "No registration required. No trackers. MIT License.",
+  },
+};
 
 const distroInfo: Record<DistroBase, { label: string; isoBase: string; pkg: string; desc: string }> = {
   "ubuntu-24.04": {
     label: "Ubuntu 24.04 LTS",
     isoBase: "https://releases.ubuntu.com/noble/",
     pkg: "apt",
-    desc: "Стабильная LTS база, отличная поддержка драйверов и snap/flatpak",
+    desc: "Stable LTS base, excellent driver support and snap/flatpak",
   },
   "debian-12": {
     label: "Debian 12 Bookworm",
     isoBase: "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/",
     pkg: "apt",
-    desc: "Минимализм и стабильность, идеальна для сборки чистого образа",
+    desc: "Minimalism and stability, ideal for clean image builds",
   },
   arch: {
     label: "Arch (rolling)",
     isoBase: "https://archlinux.org/releng/releases/",
     pkg: "pacman",
-    desc: "Свежие пакеты, AUR, гибкая кастомизация для продвинутых",
+    desc: "Fresh packages, AUR, flexible customization for advanced users",
   },
   "fedora-41": {
     label: "Fedora 41 Workstation",
     isoBase: "https://fedoraproject.org/workstation/download/",
     pkg: "dnf",
-    desc: "Современный стек, Wayland по умолчанию, свежие ядра",
+    desc: "Modern stack, Wayland by default, fresh kernels",
   },
 };
 
 const editorCatalog: Record<EditorOption, { name: string; desc: string; gui: boolean; ai: string }> = {
-  zed: { name: "Zed", desc: "GPU-ускоренный редактор, collaboration, LSP из коробки", gui: true, ai: "Встроенный чат, inline-assist" },
-  cursor: { name: "Cursor", desc: "VS Code форк с нативной AI-парой программиста", gui: true, ai: "Copilot++ и агентный режим" },
-  vscode: { name: "VS Code", desc: "Де-факто стандарт, расширения для любого языка", gui: true, ai: "GitHub Copilot, Continue, Cody" },
-  neovim: { name: "Neovim", desc: "Терминальный редактор, молниеносный и расширяемый", gui: false, ai: "Copilot.lua, Codeium, Avante" },
-  helix: { name: "Helix", desc: "Модальный редактор на Rust, встроенные LSP и treesitter", gui: false, ai: "Поддержка LSP-based AI" },
+  zed: { name: "Zed", desc: "GPU-accelerated editor, collaboration, LSP out of box", gui: true, ai: "Built-in chat, inline-assist" },
+  cursor: { name: "Cursor", desc: "VS Code fork with native AI pair programmer", gui: true, ai: "Copilot++ and agent mode" },
+  vscode: { name: "VS Code", desc: "De-facto standard, extensions for any language", gui: true, ai: "GitHub Copilot, Continue, Cody" },
+  neovim: { name: "Neovim", desc: "Terminal editor, blazing fast and extensible", gui: false, ai: "Copilot.lua, Codeium, Avante" },
+  helix: { name: "Helix", desc: "Modal editor in Rust, built-in LSP and treesitter", gui: false, ai: "LSP-based AI support" },
 };
 
 const agentCatalog: Record<AIAgent, { name: string; desc: string; key: string }> = {
-  continue: { name: "Continue", desc: "Open-source AI-ассистент в IDE, RAG на вашей кодбазе", key: "CONTINUE_API_KEY" },
-  aider: { name: "Aider", desc: "Терминальный агент для правок в git с LLM, отлично держит контекст", key: "OPENAI_API_KEY" },
-  "gpt-engineer": { name: "GPT-Engineer", desc: "Генерация и рефакторинг проектов по промпту", key: "OPENAI_API_KEY" },
-  opencode: { name: "OpenCode", desc: "Локальный агент, поддерживает ollama и open-эндпоинты", key: "OPENAI_BASE_URL" },
-  cline: { name: "Cline (бывш.)", desc: "Агентный режим в редакторе, план-действие-проверка", key: "ANTHROPIC_API_KEY" },
+  continue: { name: "Continue", desc: "Open-source AI assistant in IDE, RAG on your codebase", key: "CONTINUE_API_KEY" },
+  aider: { name: "Aider", desc: "Terminal agent for git edits with LLM, great context", key: "OPENAI_API_KEY" },
+  "gpt-engineer": { name: "GPT-Engineer", desc: "Generate and refactor projects by prompt", key: "OPENAI_API_KEY" },
+  opencode: { name: "OpenCode", desc: "Local agent, supports ollama and open endpoints", key: "OPENAI_BASE_URL" },
+  cline: { name: "Cline (former)", desc: "Agent mode in editor, plan-act-verify", key: "ANTHROPIC_API_KEY" },
 };
 
 const runtimeCatalog: Record<LangRuntime, { name: string; install: string }> = {
@@ -65,6 +159,7 @@ function classNames(...xs: Array<string | false | null | undefined>) {
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>("dark");
+  const [lang, setLang] = useState<Lang>("ru");
   const [distro, setDistro] = useState<DistroBase>("ubuntu-24.04");
   const [editors, setEditors] = useState<EditorOption[]>(["zed", "cursor", "vscode", "neovim"]);
   const [agents, setAgents] = useState<AIAgent[]>(["continue", "aider", "cline"]);
@@ -79,6 +174,8 @@ export default function App() {
   const [wizardStep, setWizardStep] = useState(0);
   const [copied, setCopied] = useState(false);
   const codeRef = useRef<HTMLPreElement>(null);
+
+  const t = translations[lang];
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -121,12 +218,12 @@ export default function App() {
   }
 
   const wizardSteps = [
-    { title: "Приветствие", desc: "Настроим вашу систему для вайб-кодинга с AI" },
-    { title: "База", desc: "Выбор дистрибутива и параметров системы" },
-    { title: "Редакторы", desc: "Zed, Cursor, VS Code, Neovim, Helix" },
-    { title: "AI-агенты", desc: "Continue, Aider, OpenCode, Cline" },
-    { title: "Языки", desc: "Node, Python, Rust, Go, Bun, Deno" },
-    { title: "Финал", desc: "Сгенерировать скрипт и образ" },
+    { title: lang === "ru" ? "Приветствие" : "Welcome", desc: lang === "ru" ? "Настроим вашу систему для вайб-кодинга с AI" : "Set up your AI-powered coding system" },
+    { title: lang === "ru" ? "База" : "Base", desc: lang === "ru" ? "Выбор дистрибутива и параметров системы" : "Choose distro and system settings" },
+    { title: lang === "ru" ? "Редакторы" : "Editors", desc: lang === "ru" ? "Zed, Cursor, VS Code, Neovim, Helix" : "Zed, Cursor, VS Code, Neovim, Helix" },
+    { title: lang === "ru" ? "AI-агенты" : "AI Agents", desc: lang === "ru" ? "Continue, Aider, OpenCode, Cline" : "Continue, Aider, OpenCode, Cline" },
+    { title: lang === "ru" ? "Языки" : "Languages", desc: lang === "ru" ? "Node, Python, Rust, Go, Bun, Deno" : "Node, Python, Rust, Go, Bun, Deno" },
+    { title: lang === "ru" ? "Финал" : "Finish", desc: lang === "ru" ? "Сгенерировать скрипт и образ" : "Generate script and ISO" },
   ];
 
   return (
@@ -156,11 +253,23 @@ export default function App() {
               </div>
             </div>
             <div>
-              <div className="text-lg font-semibold tracking-tight">Vibe Linux Builder</div>
-              <div className="text-xs opacity-70 -mt-1">ISO для вайб-кодинга с AI</div>
+              <div className="text-lg font-semibold tracking-tight">{t.title}</div>
+              <div className="text-xs opacity-70 -mt-1">{t.subtitle}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setLang(lang === "ru" ? "en" : "ru")}
+              className={classNames(
+                "rounded-xl px-3 py-2 text-sm font-medium transition",
+                theme === "dark"
+                  ? "bg-zinc-800 hover:bg-zinc-700 border border-zinc-700"
+                  : "bg-white hover:bg-zinc-50 border border-zinc-200 shadow-sm"
+              )}
+              title="Switch language"
+            >
+              {lang === "ru" ? "RU" : "EN"}
+            </button>
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className={classNames(
@@ -169,15 +278,15 @@ export default function App() {
                   ? "bg-zinc-800 hover:bg-zinc-700 border border-zinc-700"
                   : "bg-white hover:bg-zinc-50 border border-zinc-200 shadow-sm"
               )}
-              title="Переключить тему"
+              title={lang === "ru" ? "Переключить тему" : "Toggle theme"}
             >
-              {theme === "dark" ? "☾ Тёмная" : "☀ Светлая"}
+              {theme === "dark" ? "☾ Dark" : "☀ Light"}
             </button>
             <a
               href="#builder"
               className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:translate-y-[-1px]"
             >
-              Собрать ISO
+              {lang === "ru" ? "Собрать ISO" : "Build ISO"}
             </a>
           </div>
         </header>
@@ -186,38 +295,41 @@ export default function App() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-300">
               <span className="h-2 w-2 rounded-full bg-indigo-400 animate-pulse" />
-              Новинка: мастер пост-установки c AI-агентами
+              {lang === "ru" ? "Новинка: мастер пост-установки c AI-агентами" : "New: Post-install wizard with AI agents"}
             </div>
             <h1 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">
-              Дистрибутив Linux для <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">вайб-кодинга</span>
+              {lang === "ru" ? (
+                <>Дистрибутив Linux для <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">вайб-кодинга</span></>
+              ) : (
+                <>Linux distro for <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">vibe coding</span></>
+              )}
             </h1>
             <p className="mt-4 max-w-xl text-base leading-relaxed opacity-80">
-              Генерируйте скрипт сборки ISO на базе Ubuntu/Debian/Arch/Fedora с современным стеком: Zed, Cursor, VS Code, Neovim, Docker, Ollama, Node, Python, Rust и AI-агентами (Continue, Aider, Cline и др.).
-              В комплекте — графический мастер пост-установки для выбора ПО.
+              {t.heroDesc}
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <button
                 onClick={() => setWizardOpen(true)}
                 className="rounded-2xl bg-white/10 px-5 py-3 text-sm font-semibold backdrop-blur transition hover:bg-white/15"
               >
-                Открыть мастер установки
+                {t.openWizard}
               </button>
               <a
                 href="#script"
                 className="rounded-2xl border border-zinc-700 bg-zinc-900/40 px-5 py-3 text-sm font-semibold backdrop-blur transition hover:bg-zinc-900/60"
               >
-                Посмотреть скрипт
+                {t.viewScript}
               </a>
             </div>
             <div className="mt-6 flex items-center gap-4 text-xs opacity-70">
               <div className="flex items-center gap-2">
-                <CheckIco /> Автологин в live-сессию
+                <CheckIco /> {t.feature1}
               </div>
               <div className="flex items-center gap-2">
-                <CheckIco /> Wayland по умолчанию
+                <CheckIco /> {t.feature2}
               </div>
               <div className="flex items-center gap-2">
-                <CheckIco /> Nix/Devbox (опционально)
+                <CheckIco /> {t.feature3}
               </div>
             </div>
           </div>
@@ -234,13 +346,13 @@ export default function App() {
               </div>
               <div className="p-5">
                 <div className="grid grid-cols-3 gap-3">
-                  {["База", "Редакторы", "AI-агенты"].map((t, i) => (
-                    <div key={t} className={classNames(
+                  {(lang === "ru" ? ["База", "Редакторы", "AI-агенты"] : ["Base", "Editors", "AI Agents"]).map((item, i) => (
+                    <div key={item} className={classNames(
                       "rounded-2xl p-4",
                       theme === "dark" ? "bg-zinc-800/70 border border-zinc-800" : "bg-zinc-50 border border-zinc-200"
                     )}>
-                      <div className="text-[11px] uppercase tracking-widest opacity-60">Шаг {i + 1}</div>
-                      <div className="mt-1 font-semibold">{t}</div>
+                      <div className="text-[11px] uppercase tracking-widest opacity-60">{lang === "ru" ? "Шаг" : "Step"} {i + 1}</div>
+                      <div className="mt-1 font-semibold">{item}</div>
                       <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-zinc-700/40">
                         <div className="h-full w-2/3 bg-gradient-to-r from-violet-500 to-indigo-500" />
                       </div>
@@ -249,10 +361,10 @@ export default function App() {
                 </div>
                 <div className="mt-5 grid grid-cols-2 gap-3">
                   {[
-                    { label: "Zed", sub: "gpu, collab, chat" },
-                    { label: "Cursor", sub: "agent mode, copilot++" },
-                    { label: "Continue", sub: "RAG по проекту" },
-                    { label: "Ollama", sub: "локальные модели" },
+                    { label: "Zed", sub: lang === "ru" ? "gpu, collab, chat" : "gpu, collab, chat" },
+                    { label: "Cursor", sub: lang === "ru" ? "agent mode, copilot++" : "agent mode, copilot++" },
+                    { label: "Continue", sub: lang === "ru" ? "RAG по проекту" : "RAG on codebase" },
+                    { label: "Ollama", sub: lang === "ru" ? "локальные модели" : "local models" },
                   ].map((c) => (
                     <div key={c.label} className={classNames(
                       "rounded-2xl p-4",
@@ -261,19 +373,19 @@ export default function App() {
                       <div className="text-sm font-semibold">{c.label}</div>
                       <div className="text-xs opacity-70">{c.sub}</div>
                       <div className="mt-3 flex items-center gap-2">
-                        <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">выбрано</span>
-                        <span className="text-[11px] opacity-60">рекомендовано</span>
+                        <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">{lang === "ru" ? "выбрано" : "selected"}</span>
+                        <span className="text-[11px] opacity-60">{lang === "ru" ? "рекомендовано" : "recommended"}</span>
                       </div>
                     </div>
                   ))}
                 </div>
                 <div className="mt-5 flex items-center justify-between">
-                  <div className="text-xs opacity-70">Предпросмотр конфигурации</div>
+                  <div className="text-xs opacity-70">{lang === "ru" ? "Предпросмотр конфигурации" : "Configuration preview"}</div>
                   <button
                     onClick={() => setWizardOpen(true)}
                     className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-indigo-500/30"
                   >
-                    Настроить
+                    {lang === "ru" ? "Настроить" : "Configure"}
                   </button>
                 </div>
               </div>
@@ -292,11 +404,11 @@ export default function App() {
               "rounded-[28px] border p-6 shadow-xl",
               theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-200 bg-white"
             )}>
-              <h2 className="text-xl font-semibold">Конфигуратор сборки</h2>
-              <p className="mt-1 text-sm opacity-70">Выберите базу и компоненты. Скрипт обновится автоматически.</p>
+              <h2 className="text-xl font-semibold">{t.configTitle}</h2>
+              <p className="mt-1 text-sm opacity-70">{t.configDesc}</p>
 
               <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-                <Field label="Базовый дистрибутив">
+                <Field label={t.distroLabel}>
                   <div className="grid grid-cols-1 gap-2">
                     {Object.entries(distroInfo).map(([k, v]) => {
                       const key = k as DistroBase;
@@ -325,7 +437,7 @@ export default function App() {
                           <div>
                             <div className="font-semibold">{v.label}</div>
                             <div className="text-xs opacity-70">{v.desc}</div>
-                            <div className="mt-1 text-[11px] opacity-60">Пакетный менеджер: {v.pkg}</div>
+                            <div className="mt-1 text-[11px] opacity-60">{lang === "ru" ? "Пакетный менеджер:" : "Package manager:"} {v.pkg}</div>
                           </div>
                         </button>
                       );
@@ -333,41 +445,41 @@ export default function App() {
                   </div>
                 </Field>
 
-                <Field label="Пользователь и система">
+                <Field label={t.userLabel}>
                   <div className="space-y-3">
-                    <TextInput label="Имя пользователя" value={userName} onChange={setUserName} placeholder="vibe" theme={theme} />
-                    <TextInput label="Hostname" value={hostName} onChange={setHostName} placeholder="vibecode" theme={theme} />
+                    <TextInput label={t.userName} value={userName} onChange={setUserName} placeholder="vibe" theme={theme} />
+                    <TextInput label={t.hostname} value={hostName} onChange={setHostName} placeholder="vibecode" theme={theme} />
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <Toggle checked={includeNvidia} onChange={setIncludeNvidia} label="Драйверы NVIDIA" hint="Проприетарные, для CUDA и игр" theme={theme} />
-                      <Toggle checked={enableFlatpak} onChange={setEnableFlatpak} label="Flatpak + Flathub" hint="Контейнеризованные приложения" theme={theme} />
-                      <Toggle checked={installOllama} onChange={setInstallOllama} label="Ollama (LLM локально)" hint="llama.cpp, модели on-device" theme={theme} />
+                      <Toggle checked={includeNvidia} onChange={setIncludeNvidia} label={t.nvidia} hint={t.nvidiaHint} theme={theme} />
+                      <Toggle checked={enableFlatpak} onChange={setEnableFlatpak} label={t.flatpak} hint={t.flatpakHint} theme={theme} />
+                      <Toggle checked={installOllama} onChange={setInstallOllama} label={t.ollama} hint={t.ollamaHint} theme={theme} />
                     </div>
                   </div>
                 </Field>
 
-                <Field label="Редакторы">
-                  <Chips options={Object.entries(editorCatalog).map(([k, v]) => ({ id: k as EditorOption, title: v.name, sub: v.desc }))} 
+                <Field label={t.editors}>
+                  <Chips options={Object.entries(editorCatalog).map(([k, v]) => ({ id: k as EditorOption, title: v.name, sub: v.desc }))}
                          selected={editors} onToggle={(id) => setEditors((s) => toggleInArray(s, id))} theme={theme}/>
                 </Field>
 
-                <Field label="AI-агенты и ассистенты">
-                  <Chips options={Object.entries(agentCatalog).map(([k, v]) => ({ id: k as AIAgent, title: v.name, sub: v.desc }))} 
+                <Field label={t.agents}>
+                  <Chips options={Object.entries(agentCatalog).map(([k, v]) => ({ id: k as AIAgent, title: v.name, sub: v.desc }))}
                          selected={agents} onToggle={(id) => setAgents((s) => toggleInArray(s, id))} theme={theme} />
                 </Field>
 
-                <Field label="Среды выполнения и языки" full>
+                <Field label={t.runtimes} full>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <Chips options={Object.entries(runtimeCatalog).map(([k, v]) => ({ id: k as LangRuntime, title: v.name, sub: `Установка через ${v.install}` }))}
+                    <Chips options={Object.entries(runtimeCatalog).map(([k, v]) => ({ id: k as LangRuntime, title: v.name, sub: `${lang === "ru" ? "Установка через" : "Install via"} ${v.install}` }))}
                            selected={runtimes} onToggle={(id) => setRuntimes((s) => toggleInArray(s, id))} theme={theme}/>
                     <Chips options={[
-                      { id: "git" as Tool, title: "Git", sub: "контроль версий" },
-                      { id: "gh" as Tool, title: "GitHub CLI", sub: "PR/Issue из терминала" },
-                      { id: "docker" as Tool, title: "Docker", sub: "контейнеры" },
-                      { id: "podman" as Tool, title: "Podman", sub: "rootless контейнеры" },
-                      { id: "tmux" as Tool, title: "tmux", sub: "сессии терминала" },
-                      { id: "fzf" as Tool, title: "fzf", sub: "поиск" },
-                      { id: "ripgrep" as Tool, title: "ripgrep", sub: "grep на стероидах" },
-                      { id: "jq" as Tool, title: "jq", sub: "JSON в терминале" },
+                      { id: "git" as Tool, title: "Git", sub: lang === "ru" ? "контроль версий" : "version control" },
+                      { id: "gh" as Tool, title: "GitHub CLI", sub: lang === "ru" ? "PR/Issue из терминала" : "PR/Issue from terminal" },
+                      { id: "docker" as Tool, title: "Docker", sub: lang === "ru" ? "контейнеры" : "containers" },
+                      { id: "podman" as Tool, title: "Podman", sub: lang === "ru" ? "rootless контейнеры" : "rootless containers" },
+                      { id: "tmux" as Tool, title: "tmux", sub: lang === "ru" ? "сессии терминала" : "terminal sessions" },
+                      { id: "fzf" as Tool, title: "fzf", sub: lang === "ru" ? "поиск" : "search" },
+                      { id: "ripgrep" as Tool, title: "ripgrep", sub: lang === "ru" ? "grep на стероидах" : "grep on steroids" },
+                      { id: "jq" as Tool, title: "jq", sub: lang === "ru" ? "JSON в терминале" : "JSON in terminal" },
                     ]} selected={tools} onToggle={(id) => setTools((s) => toggleInArray(s, id))} theme={theme}/>
                   </div>
                 </Field>
@@ -375,7 +487,7 @@ export default function App() {
 
               <div id="script" className="mt-8">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Сгенерированный скрипт</h3>
+                  <h3 className="text-lg font-semibold">{t.scriptTitle}</h3>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={copyScript}
@@ -386,13 +498,13 @@ export default function App() {
                           : "bg-zinc-100 hover:bg-zinc-200 border border-zinc-200"
                       )}
                     >
-                      {copied ? "Скопировано ✓" : "Скопировать"}
+                      {copied ? t.copied : t.copy}
                     </button>
                     <button
                       onClick={downloadScript}
                       className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
                     >
-                      Скачать .sh
+                      {t.download}
                     </button>
                   </div>
                 </div>
@@ -407,14 +519,14 @@ export default function App() {
                       <span className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
                       <span className="ml-2 font-mono">build-vibecode-iso.sh</span>
                     </div>
-                    <div className="hidden md:block opacity-70">bash • автогенерация</div>
+                    <div className="hidden md:block opacity-70">bash • {lang === "ru" ? "автогенерация" : "auto-generated"}</div>
                   </div>
                   <pre ref={codeRef} className="max-h-[520px] overflow-auto p-4 text-[12.5px] leading-6 text-zinc-200">
                     <code>{script}</code>
                   </pre>
                 </div>
                 <p className="mt-2 text-xs opacity-60">
-                  Скрипт создаёт загрузочный ISO с предустановленным стеком для разработки. Требуются права root и ~25–40 ГБ места.
+                  {t.scriptNote}
                 </p>
               </div>
             </div>
@@ -425,23 +537,23 @@ export default function App() {
               "rounded-[28px] border p-6",
               theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-200 bg-white"
             )}>
-              <h3 className="text-lg font-semibold">Что входит по умолчанию</h3>
+              <h3 className="text-lg font-semibold">{t.defaultTitle}</h3>
               <ul className="mt-3 space-y-2 text-sm">
-                <li className="flex items-start gap-2"><CheckIco /> Wayland, PipeWire, шрифты и темы</li>
+                <li className="flex items-start gap-2"><CheckIco /> Wayland, PipeWire, {lang === "ru" ? "шрифты и темы" : "fonts and themes"}</li>
                 <li className="flex items-start gap-2"><CheckIco /> Fastfetch, starship prompt, zsh + oh-my-zsh</li>
                 <li className="flex items-start gap-2"><CheckIco /> Flatpak (Flathub) — Zed, Cursor, VS Code</li>
-                <li className="flex items-start gap-2"><CheckIco /> Локальный LLM рантайм (Ollama) + модель по умолчанию</li>
-                <li className="flex items-start gap-2"><CheckIco /> Докер/Podman, dev-контейнеры</li>
-                <li className="flex items-start gap-2"><CheckIco /> Менеджеры версий: fnm, pyenv, rustup</li>
+                <li className="flex items-start gap-2"><CheckIco /> {lang === "ru" ? "Локальный LLM рантайм (Ollama) + модель по умолчанию" : "Local LLM runtime (Ollama) + default model"}</li>
+                <li className="flex items-start gap-2"><CheckIco /> {lang === "ru" ? "Докер/Podman, dev-контейнеры" : "Docker/Podman, dev containers"}</li>
+                <li className="flex items-start gap-2"><CheckIco /> {lang === "ru" ? "Менеджеры версий: fnm, pyenv, rustup" : "Version managers: fnm, pyenv, rustup"}</li>
               </ul>
               <div className="mt-5 rounded-2xl bg-gradient-to-r from-violet-600/15 to-indigo-600/15 p-4 text-sm">
-                <div className="font-semibold">Мастер пост-установки</div>
-                <p className="mt-1 opacity-80">Графический wizard при первом запуске Live-сессии позволяет выбрать редакторы, AI-агентов, языки и ключи API. Конфиги сохраняются в persistent overlay.</p>
+                <div className="font-semibold">{t.wizardTitle}</div>
+                <p className="mt-1 opacity-80">{t.wizardDesc}</p>
                 <button
                   onClick={() => setWizardOpen(true)}
                   className="mt-3 rounded-xl bg-zinc-900 px-4 py-2 text-xs font-semibold text-white"
                 >
-                  Открыть демо мастера
+                  {t.openDemo}
                 </button>
               </div>
             </div>
@@ -450,7 +562,7 @@ export default function App() {
               "rounded-[28px] border p-6",
               theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-200 bg-white"
             )}>
-              <h3 className="text-lg font-semibold">Каталог AI-инструментов</h3>
+              <h3 className="text-lg font-semibold">{t.catalogTitle}</h3>
               <div className="mt-3 grid grid-cols-1 gap-3">
                 {Object.entries(editorCatalog).map(([k, v]) => (
                   <div key={k} className={classNames(
@@ -475,16 +587,16 @@ export default function App() {
               "rounded-[28px] border p-6",
               theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-200 bg-white"
             )}>
-              <h3 className="text-lg font-semibold">Быстрый старт</h3>
+              <h3 className="text-lg font-semibold">{t.quickStart}</h3>
               <ol className="mt-3 list-decimal pl-5 text-sm space-y-2 opacity-90">
-                <li>Скачайте скрипт и запустите на совместимом хосте (Ubuntu/Debian/Arch/Fedora).</li>
-                <li>Скрипт скачает базовый ISO, распакует squashfs, добавит пакеты и wizard.</li>
-                <li>Соберите финальный ISO и запишите на USB через balenaEtcher или dd.</li>
-                <li>Загрузитесь в Live-режим, мастер предложит выбрать компоненты.</li>
-                <li>Установите систему или используйте persistent USB.</li>
+                <li>{t.step1}</li>
+                <li>{t.step2}</li>
+                <li>{t.step3}</li>
+                <li>{t.step4}</li>
+                <li>{t.step5}</li>
               </ol>
               <div className="mt-4 text-xs opacity-60">
-                Внимание: сборка ISO требует ~20–30 ГБ и может занять 30–90 минут в зависимости от скорости сети и CPU.
+                {t.warning}
               </div>
             </div>
           </aside>
@@ -503,14 +615,14 @@ export default function App() {
                   <WizIco />
                 </div>
                 <div>
-                  <div className="font-semibold">Мастер пост-установки</div>
-                  <div className="text-xs opacity-60">Графический wizard для Live-сессии</div>
+                  <div className="font-semibold">{t.wizardTitle}</div>
+                  <div className="text-xs opacity-60">{lang === "ru" ? "Графический wizard для Live-сессии" : "Graphical wizard for Live session"}</div>
                 </div>
               </div>
               <button onClick={() => setWizardOpen(false)} className={classNames(
                 "rounded-xl px-3 py-2 text-sm",
                 theme === "dark" ? "bg-zinc-800 hover:bg-zinc-700 border border-zinc-700" : "bg-zinc-100 hover:bg-zinc-200 border border-zinc-200"
-              )}>Закрыть</button>
+              )}>{lang === "ru" ? "Закрыть" : "Close"}</button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-[240px_1fr]">
@@ -588,7 +700,7 @@ export default function App() {
                         </div>
                       </Field>
                     </div>
-                    <NavButtons onBack={() => setWizardStep(0)} onNext={() => setWizardStep(2)} />
+                    <NavButtons onBack={() => setWizardStep(0)} onNext={() => setWizardStep(2)} lang={lang} />
                   </StepCard>
                 )}
 
@@ -674,11 +786,11 @@ export default function App() {
         <div className="flex flex-wrap items-center justify-center gap-4 mb-3">
           <a href="https://github.com" target="_blank" rel="noreferrer" className="underline hover:opacity-80">GitHub</a>
           <span>•</span>
-          <a href="#builder" className="underline hover:opacity-80">Документация</a>
+          <a href="#builder" className="underline hover:opacity-80">{lang === "ru" ? "Документация" : "Documentation"}</a>
           <span>•</span>
-          <span>Сделано для разработчиков, которые любят вайб-кодинг с AI</span>
+          <span>{t.footer}</span>
         </div>
-        <div>Не требует регистрации. Никаких трекеров. MIT License.</div>
+        <div>{t.noTrack}</div>
       </footer>
     </div>
   );
@@ -801,11 +913,11 @@ function StepCard({ title, desc, children }: { title: string; desc: string; chil
   );
 }
 
-function NavButtons({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
+function NavButtons({ onBack, onNext, lang }: { onBack: () => void; onNext: () => void; lang: Lang }) {
   return (
     <div className="mt-6 flex items-center justify-between">
-      <button onClick={onBack} className="rounded-2xl border border-zinc-700 bg-zinc-900/40 px-5 py-3 text-sm font-medium hover:bg-zinc-900/60">Назад</button>
-      <button onClick={onNext} className="rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30">Далее</button>
+      <button onClick={onBack} className="rounded-2xl border border-zinc-700 bg-zinc-900/40 px-5 py-3 text-sm font-medium hover:bg-zinc-900/60">{lang === "ru" ? "Назад" : "Back"}</button>
+      <button onClick={onNext} className="rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30">{lang === "ru" ? "Далее" : "Next"}</button>
     </div>
   );
 }
@@ -847,7 +959,7 @@ function buildScript(cfg: {
   const flatpaks: string[] = [];
   if (enableFlatpak) {
     if (editors.includes("zed")) flatpaks.push("dev.zed.Zed");
-    if (editors.includes("cursor")) flatpaks.push("io.cursor.Cursor");
+    // Cursor is not available as Flatpak - it's a proprietary editor
     if (editors.includes("vscode")) flatpaks.push("com.visualstudio.code");
   }
 
@@ -918,21 +1030,24 @@ bootstrap_debian() {
   else
     debootstrap --arch=amd64 bookworm "$ROOTFS" http://deb.debian.org/debian/ || true
   fi
-  
+
   # Mount filesystems for chroot
   mount --bind /dev "$ROOTFS/dev"
   mount -t devpts devpts "$ROOTFS/dev/pts"
   mount -t tmpfs tmpfs "$ROOTFS/dev/shm"
   mount -t proc /proc "$ROOTFS/proc"
   mount -t sysfs /sys "$ROOTFS/sys"
+  # Mount /dev/random and /dev/urandom for entropy
+  mount --bind /dev/random "$ROOTFS/dev/random"
+  mount --bind /dev/urandom "$ROOTFS/dev/urandom"
   cp /etc/resolv.conf "$ROOTFS/etc/resolv.conf" || true
-  
+
   # Update and install packages using apt
   chroot "$ROOTFS" apt update
   chroot "$ROOTFS" apt install -y --fix-broken linux-image-generic zsh curl wget git sudo locales
-  
+
   # Unmount
-  umount -l "$ROOTFS/dev/pts" "$ROOTFS/dev/shm" "$ROOTFS/dev" "$ROOTFS/proc" "$ROOTFS/sys" 2>/dev/null || true
+  umount -l "$ROOTFS/dev/random" "$ROOTFS/dev/urandom" "$ROOTFS/dev/pts" "$ROOTFS/dev/shm" "$ROOTFS/dev" "$ROOTFS/proc" "$ROOTFS/sys" 2>/dev/null || true
 }
 bootstrap_arch() {
   mkdir -p "$ROOTFS"
@@ -1009,9 +1124,11 @@ if [[ "__HAS_NODE__" == "1" ]]; then
 fi
 if [[ "__HAS_BUN__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'curl -fsSL https://bun.sh/install | bash'
+  runuser -u "$USERNAME" -- bash -lc 'export PATH="$HOME/.bun/bin:$PATH"; bun --version'
 fi
 if [[ "__HAS_DENO__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'curl -fsSL https://deno.land/install.sh | sh'
+  runuser -u "$USERNAME" -- bash -lc 'export PATH="$HOME/.deno/bin:$PATH"; deno --version'
 fi
 if [[ "__HAS_PY__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'curl https://pyenv.run | bash'

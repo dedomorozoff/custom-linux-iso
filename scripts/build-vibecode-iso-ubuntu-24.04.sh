@@ -154,9 +154,11 @@ if [[ "__HAS_NODE__" == "1" ]]; then
 fi
 if [[ "__HAS_BUN__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'curl -fsSL https://bun.sh/install | bash'
+  runuser -u "$USERNAME" -- bash -lc 'export PATH="$HOME/.bun/bin:$PATH"; bun --version'
 fi
 if [[ "__HAS_DENO__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'curl -fsSL https://deno.land/install.sh | sh'
+  runuser -u "$USERNAME" -- bash -lc 'export PATH="$HOME/.deno/bin:$PATH"; deno --version'
 fi
 if [[ "__HAS_PY__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'curl https://pyenv.run | bash'
@@ -266,11 +268,14 @@ mount -t devpts devpts "$ROOTFS/dev/pts"
 mount -t tmpfs tmpfs "$ROOTFS/dev/shm"
 mount -t proc /proc "$ROOTFS/proc"
 mount -t sysfs /sys "$ROOTFS/sys"
+# Mount /dev/random and /dev/urandom for entropy
+mount --bind /dev/random "$ROOTFS/dev/random"
+mount --bind /dev/urandom "$ROOTFS/dev/urandom"
 cp /etc/resolv.conf "$ROOTFS/etc/resolv.conf" || true
 
 chroot "$ROOTFS" bash /tmp/customize.sh
 
-umount -l "$ROOTFS/dev/pts" "$ROOTFS/dev/shm" "$ROOTFS/dev" "$ROOTFS/proc" "$ROOTFS/sys" 2>/dev/null || true
+umount -l "$ROOTFS/dev/random" "$ROOTFS/dev/urandom" "$ROOTFS/dev/pts" "$ROOTFS/dev/shm" "$ROOTFS/dev" "$ROOTFS/proc" "$ROOTFS/sys" 2>/dev/null || true
 
 # 4) Build squashfs and ISO
 log "Building squashfs..."
