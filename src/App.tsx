@@ -1373,23 +1373,21 @@ chmod +x /usr/local/bin/vibe-wizard
 # Create systemd service for auto-start wizard (Lite build only)
 if [[ "${BUILD_TYPE}" == "lite" ]]; then
   mkdir -p /etc/systemd/system
-  cat > /etc/systemd/system/vibe-wizard.service << 'SVCEOF'
+  cat > /etc/systemd/system/vibe-wizard.service << SVCEOF
 [Unit]
 Description=Vibe Post-Install Wizard
 After=graphical-session.target
-ConditionPathExists=!/home/${USERNAME}/.vibe-wizard-done
+ConditionPathExists=!/home/\${USERNAME}/.vibe-wizard-done
 
 [Service]
 Type=oneshot
 ExecStart=/usr/local/bin/vibe-wizard
 RemainAfterExit=yes
-StandardOutput=journal
-StandardError=journal
 
 [Install]
 WantedBy=graphical-session.target
 SVCEOF
-  systemctl enable vibe-wizard.service
+  systemctl enable vibe-wizard.service 2>/dev/null || true
 fi
 
 echo "Custom chroot done."
