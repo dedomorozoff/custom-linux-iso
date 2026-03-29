@@ -41,6 +41,11 @@ esac
 # 2) Bootstrap rootfs
 log "Preparing base system..."
 ROOTFS="$WORKDIR/rootfs"
+
+# Cleanup previous run - unmount first if needed
+if mountpoint -q "$ROOTFS/sys" 2>/dev/null; then
+  umount -l "$ROOTFS/sys" "$ROOTFS/proc" "$ROOTFS/dev" 2>/dev/null || true
+fi
 rm -rf "$ROOTFS"
 mkdir -p "$ROOTFS"
 
