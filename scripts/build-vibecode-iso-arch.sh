@@ -25,7 +25,9 @@ log "Installing build dependencies..."
 case "$DISTRO" in
   ubuntu-24.04|debian-12)
     apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get install -y       debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools       dosfstools unzip curl wget git rsync python3 python3-pip
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools \
+      dosfstools unzip curl wget git rsync python3 python3-pip
     ;;
   arch)
     pacman -Sy --noconfirm archiso squashfs-tools xorriso grub dosfstools mtools wget curl git rsync python
@@ -81,16 +83,31 @@ locale-gen en_US.UTF-8 || true
 update-locale LANG=en_US.UTF-8 || true
 
 if command -v apt-get >/dev/null 2>&1; then
+  # Enable universe/multiverse repositories for Ubuntu
+  sed -i 's/main$/main universe multiverse restricted/' /etc/apt/sources.list || true
   apt-get update
-  apt-get install -y     pipewire wireplumber pipewire-audio     network-manager iwd     flatpak xdg-desktop-portal xdg-desktop-portal-wlr     fonts-firacode fonts-noto fonts-noto-color-emoji     udev systemd-timesyncd zsh git curl wget unzip jq fzf ripgrep tmux build-essential pkg-config     python3 python3-venv python3-pip     docker.io
+  apt-get install -y \
+    pipewire wireplumber pipewire-audio \
+    network-manager \
+    flatpak xdg-desktop-portal xdg-desktop-portal-gtk \
+    fonts-firacode fonts-noto-core fonts-noto-color-emoji \
+    udev systemd-timesyncd zsh git curl wget unzip jq fzf ripgrep tmux build-essential pkg-config \
+    python3 python3-venv python3-pip \
+    docker.io
   systemctl enable NetworkManager || true
   systemctl enable docker || true
 elif command -v pacman >/dev/null 2>&1; then
-  pacman -Sy --noconfirm pipewire wireplumber networkmanager iwd flatpak xdg-desktop-portal     ttf-fira-code noto-fonts noto-fonts-emoji base-devel git curl wget unzip jq fzf ripgrep tmux python python-pip docker
+  pacman -Sy --noconfirm \
+    pipewire wireplumber networkmanager \
+    flatpak xdg-desktop-portal xdg-desktop-portal-gtk \
+    ttf-fira-code noto-fonts noto-fonts-emoji \
+    base-devel git curl wget unzip jq fzf ripgrep tmux \
+    python python-pip docker
   systemctl enable NetworkManager
   systemctl enable docker
 elif command -v dnf >/dev/null 2>&1; then
-  dnf -y install pipewire wireplumber NetworkManager iwd flatpak xdg-desktop-portal     fira-code-fonts google-noto* git curl wget unzip jq fzf ripgrep tmux python3 python3-pip docker
+  dnf -y install pipewire wireplumber NetworkManager iwd flatpak xdg-desktop-portal \
+    fira-code-fonts google-noto* git curl wget unzip jq fzf ripgrep tmux python3 python3-pip docker
   systemctl enable NetworkManager
   systemctl enable docker
 fi
