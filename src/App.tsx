@@ -1099,14 +1099,17 @@ cat > "$ROOTFS/etc/vibe/config.json" << JSON
 JSON
 
 log "Running chroot customization..."
+# Mount filesystems for chroot
 mount --bind /dev "$ROOTFS/dev"
+mount -t devpts devpts "$ROOTFS/dev/pts"
+mount -t tmpfs tmpfs "$ROOTFS/dev/shm"
 mount -t proc /proc "$ROOTFS/proc"
 mount -t sysfs /sys "$ROOTFS/sys"
 cp /etc/resolv.conf "$ROOTFS/etc/resolv.conf" || true
 
 chroot "$ROOTFS" bash /tmp/customize.sh
 
-umount -l "$ROOTFS/dev" "$ROOTFS/proc" "$ROOTFS/sys" || true
+umount -l "$ROOTFS/dev/pts" "$ROOTFS/dev/shm" "$ROOTFS/dev" "$ROOTFS/proc" "$ROOTFS/sys" 2>/dev/null || true
 
 # 4) Build squashfs and ISO
 log "Building squashfs..."
