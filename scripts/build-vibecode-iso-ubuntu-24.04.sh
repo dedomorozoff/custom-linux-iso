@@ -197,7 +197,12 @@ if [[ "__HAS_GO__" == "1" ]]; then
 fi
 
 if [[ "__HAS_NEOVIM__" == "1" ]]; then
-  if command -v apt >/dev/null 2>&1; then apt install -y neovim; fi
+  if command -v apt >/dev/null 2>&1; then
+    # Enable universe repository if not already enabled
+    sed -i 's/main$/main universe multiverse restricted/' /etc/apt/sources.list || true
+    apt update
+    apt install -y neovim || apt install -y vim
+  fi
   if command -v pacman >/dev/null 2>&1; then pacman -Sy --noconfirm neovim; fi
   if command -v dnf >/dev/null 2>&1; then dnf -y install neovim; fi
 fi
