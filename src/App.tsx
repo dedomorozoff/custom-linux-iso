@@ -1166,7 +1166,7 @@ if command -v apt >/dev/null 2>&1; then
     systemd
   
   # Full build: install additional packages
-  if [[ "${buildType.toUpperCase()}" == "FULL" ]]; then
+  if [[ "__BUILD_TYPE__" == "full" ]]; then
     apt install -y \
       build-essential pkg-config \
       docker.io
@@ -1195,7 +1195,7 @@ fi
 if command -v flatpak >/dev/null 2>&1; then
   flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
   # Full build: install Flatpak apps
-  if [[ "${BUILD_TYPE}" == "full" ]]; then
+  if [[ "__BUILD_TYPE__" == "full" ]]; then
   FLATPAKS=(__FLATPAKS__)
   if [ ${"$"}{#FLATPAKS[@]} -gt 0 ]; then
     flatpak install -y flathub "${"$"}{FLATPAKS[@]}" || true
@@ -1210,7 +1210,7 @@ runuser -u "$USERNAME" -- bash -lc 'curl -sS https://starship.rs/install.sh | sh
 runuser -u "$USERNAME" -- bash -lc 'mkdir -p ~/.config && echo "eval $(starship init zsh)" >> ~/.zshrc'
 
 # Full build: install languages and tools
-if [[ "${BUILD_TYPE}" == "full" ]]; then
+if [[ "__BUILD_TYPE__" == "full" ]]; then
 if [[ "__HAS_NODE__" == "1" ]]; then
   runuser -u "$USERNAME" -- bash -lc 'curl -fsSL https://fnm.vercel.app/install | bash'
   runuser -u "$USERNAME" -- bash -lc 'export PATH="$HOME/.local/share/fnm:$PATH"; eval "$(fnm env)"; fnm install --lts; fnm default lts-latest'
@@ -1243,7 +1243,7 @@ if [[ "__HAS_HELIX__" == "1" ]]; then
 fi
 
 # Full build: install AI agents
-if [[ "${BUILD_TYPE}" == "full" ]]; then
+if [[ "__BUILD_TYPE__" == "full" ]]; then
 if [[ "__HAS_AIDER__" == "1" ]]; then
   pip3 install --break-system-packages --ignore-installed aider-chat
 fi
@@ -1371,7 +1371,7 @@ WIZ
 chmod +x /usr/local/bin/vibe-wizard
 
 # Create systemd service for auto-start wizard (Lite build only)
-if [[ "${BUILD_TYPE}" == "lite" ]]; then
+if [[ "__BUILD_TYPE__" == "lite" ]]; then
   mkdir -p /etc/systemd/system
   cat > /etc/systemd/system/vibe-wizard.service << SVCEOF
 [Unit]
@@ -1396,6 +1396,7 @@ EOS
 # apply replacements
 sed -i "s/__USER__/${userName}/g; s/__HOST__/${hostName}/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__NVIDIA__/${includeNvidia ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
+sed -i "s/__BUILD_TYPE__/${buildType}/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__FLATPAKS__/${flatpaks.map(s => `"${s}"`).join(" ")}/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__HAS_NODE__/${runtimes.includes("node-lts") ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__HAS_BUN__/${runtimes.includes("bun") ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
