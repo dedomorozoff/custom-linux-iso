@@ -145,12 +145,12 @@ elif command -v pacman >/dev/null 2>&1; then
     flatpak xdg-desktop-portal xdg-desktop-portal-gtk \
     ttf-fira-code noto-fonts noto-fonts-emoji \
     base-devel git curl wget unzip jq fzf ripgrep tmux \
-    python python-pip docker
+    python python-pip docker zstd
   systemctl enable NetworkManager
   systemctl enable docker
 elif command -v dnf >/dev/null 2>&1; then
   dnf -y install pipewire wireplumber NetworkManager iwd flatpak xdg-desktop-portal \
-    fira-code-fonts google-noto* git curl wget unzip jq fzf ripgrep tmux python3 python3-pip docker
+    fira-code-fonts google-noto* git curl wget unzip jq fzf ripgrep tmux python3 python3-pip docker zstd
   systemctl enable NetworkManager
   systemctl enable docker
 fi
@@ -318,7 +318,7 @@ cp "$WORKDIR/iso-root/filesystem.squashfs" "$WORKDIR/iso/live/filesystem.squashf
 
 log "Creating ISO..."
 OUT="$OUTDIR/vibe-linux-arch-$(date +%Y%m%d).iso"
-xorriso -as mkisofs   -r -V "VIBE_LINUX"   -o "$OUT"   -J -joliet-long -l   "$WORKDIR/iso" || {
+xorriso -as mkisofs   -r -V "VIBE_LINUX"   -o "$OUT"   -J -joliet-long -l -udf   "$WORKDIR/iso" || {
   warn "xorriso failed, check logs"
   exit 1
 }

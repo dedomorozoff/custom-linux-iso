@@ -136,9 +136,10 @@ if command -v apt >/dev/null 2>&1; then
     fonts-firacode fonts-noto-core fonts-noto-color-emoji \
     udev systemd-timesyncd zsh git curl wget unzip jq fzf ripgrep tmux build-essential pkg-config \
     python3 python3-venv python3-pip \
-    docker.io
+    docker.io zstd
   
   # Install VS Code via official Microsoft repository
+  rm -f /etc/apt/trusted.gpg.d/microsoft.gpg
   curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/microsoft.gpg
   echo "deb [arch=amd64] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
   apt update
@@ -319,7 +320,7 @@ cp "$WORKDIR/iso-root/filesystem.squashfs" "$WORKDIR/iso/live/filesystem.squashf
 
 log "Creating ISO..."
 OUT="$OUTDIR/vibe-linux-ubuntu-24.04-$(date +%Y%m%d).iso"
-xorriso -as mkisofs   -r -V "VIBE_LINUX"   -o "$OUT"   -J -joliet-long -l   "$WORKDIR/iso" || {
+xorriso -as mkisofs   -r -V "VIBE_LINUX"   -o "$OUT"   -J -joliet-long -l -udf   "$WORKDIR/iso" || {
   warn "xorriso failed, check logs"
   exit 1
 }

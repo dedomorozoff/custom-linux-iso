@@ -1154,7 +1154,7 @@ if command -v apt >/dev/null 2>&1; then
   # Enable universe/multiverse repositories for Ubuntu
   sed -i 's/main$/main universe multiverse restricted/' /etc/apt/sources.list || true
   apt update
-  
+
   # Base packages for all builds
   apt install -y \
     pipewire wireplumber pipewire-audio \
@@ -1163,15 +1163,16 @@ if command -v apt >/dev/null 2>&1; then
     fonts-firacode fonts-noto-core fonts-noto-color-emoji \
     udev systemd-timesyncd zsh git curl wget unzip jq fzf ripgrep tmux \
     python3-full python3-pip python3-venv \
-    systemd
+    systemd zstd
   
   # Full build: install additional packages
   if [[ "__BUILD_TYPE__" == "full" ]]; then
     apt install -y \
       build-essential pkg-config \
       docker.io
-    
+
     # Install VS Code via official Microsoft repository
+    rm -f /etc/apt/trusted.gpg.d/microsoft.gpg
     curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/microsoft.gpg
     echo "deb [arch=amd64] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
     apt update
@@ -1182,12 +1183,12 @@ if command -v apt >/dev/null 2>&1; then
   systemctl enable docker || true
 elif command -v pacman >/dev/null 2>&1; then
   pacman -Sy --noconfirm pipewire wireplumber networkmanager iwd flatpak xdg-desktop-portal \
-    ttf-fira-code noto-fonts noto-fonts-emoji base-devel git curl wget unzip jq fzf ripgrep tmux python python-pip docker
+    ttf-fira-code noto-fonts noto-fonts-emoji base-devel git curl wget unzip jq fzf ripgrep tmux python python-pip docker zstd
   systemctl enable NetworkManager
   systemctl enable docker
 elif command -v dnf >/dev/null 2>&1; then
   dnf -y install pipewire wireplumber NetworkManager iwd flatpak xdg-desktop-portal \
-    fira-code-fonts google-noto* git curl wget unzip jq fzf ripgrep tmux python3 python3-pip docker
+    fira-code-fonts google-noto* git curl wget unzip jq fzf ripgrep tmux python3 python3-pip docker zstd
   systemctl enable NetworkManager
   systemctl enable docker
 fi
@@ -1300,6 +1301,7 @@ fi
 if echo "$editors" | grep -q "vscode"; then
   if ! command -v code >/dev/null 2>&1; then
     log "Installing VS Code..."
+    rm -f /etc/apt/trusted.gpg.d/microsoft.gpg
     curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/microsoft.gpg
     echo "deb [arch=amd64] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
     apt update && apt install -y code

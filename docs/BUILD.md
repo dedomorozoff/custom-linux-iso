@@ -183,10 +183,13 @@ git clone https://github.com/<user>/dotfiles /etc/skel/.dotfiles
 **debootstrap: command not found**  
 → установите `debootstrap`
 
-**xorriso: cannot find grub-mkrescue**  
+**xorriso: cannot find grub-mkrescue**
 → установите `grub-pc-bin grub-efi-amd64-bin`
 
-**Недостаточно места**  
+**Файл filesystem.squashfs > 4 GiB**
+→ используется UDF для поддержки файлов больше 4 GiB (параметр `-udf` в xorriso)
+
+**Недостаточно места**
 → требуется ~30 GB свободных
 
 **Ошибка сети в chroot**  

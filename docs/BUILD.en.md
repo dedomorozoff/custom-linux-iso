@@ -184,6 +184,9 @@ In LightDM config (`/etc/lightdm/lightdm.conf`) comment out `autologin-user=`.
 **xorriso: cannot find grub-mkrescue**
 → install `grub-pc-bin grub-efi-amd64-bin`
 
+**filesystem.squashfs file > 4 GiB**
+→ UDF is used for files larger than 4 GiB (`-udf` flag in xorriso)
+
 **Not enough space**
 → ~30 GB free required
 
