@@ -156,6 +156,10 @@ function classNames(...xs: Array<string | false | null | undefined>) {
   return xs.filter(Boolean).join(" ");
 }
 
+function escapeSedReplacement(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/[&|]/g, "\\$&");
+}
+
 export default function App() {
   const [theme, setTheme] = useState<Theme>("dark");
   const [lang, setLang] = useState<Lang>("ru");
@@ -1012,6 +1016,8 @@ function buildScript(cfg: {
   buildType: "lite" | "full";
 }) {
   const { distro, editors, agents, runtimes, tools, userName, hostName, includeNvidia, enableFlatpak, installOllama, buildType } = cfg;
+  const userNameSed = escapeSedReplacement(userName);
+  const hostNameSed = escapeSedReplacement(hostName);
 
   const flatpaks: string[] = [];
   if (enableFlatpak) {
@@ -1053,18 +1059,16 @@ if [[ ! -c /dev/null ]]; then
 fi
 
 case "$DISTRO" in
-  ubuntu-24.04|debian-12)
-    apt update || {
-      warn "apt update failed, trying to continue..."
-    }
+  ubuntu-24.04|debian-13)
+    apt update
     DEBIAN_FRONTEND=noninteractive apt install -y --fix-broken \
-      debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools \
+      debootstrap squashfs-tools xorriso grub-common grub-pc-bin grub-efi-amd64-bin mtools \
       dosfstools unzip curl wget git rsync python3 python3-pip
     ;;
   arch)
     pacman -Sy --noconfirm archiso squashfs-tools xorriso grub dosfstools mtools wget curl git rsync python
     ;;
-  fedora-41)
+  fedora-43)
     dnf -y install livecd-tools spin-kickstarts squashfs-tools xorriso grub2-efi-x64 grub2-pc dosfstools mtools wget curl git rsync python3
     ;;
   *) err "Unsupported distro"; exit 1;;
@@ -1088,9 +1092,9 @@ else
 
 bootstrap_debian() {
   if [[ "$DISTRO" == "ubuntu-24.04" ]]; then
-    debootstrap --arch=amd64 noble "$ROOTFS" http://archive.ubuntu.com/ubuntu/ || true
+    debootstrap --arch=amd64 noble "$ROOTFS" http://archive.ubuntu.com/ubuntu/
   else
-    debootstrap --arch=amd64 trixie "$ROOTFS" http://deb.debian.org/debian/ || true
+    debootstrap --arch=amd64 trixie "$ROOTFS" http://deb.debian.org/debian/
   fi
 
   # Mount filesystems for chroot
@@ -1109,7 +1113,7 @@ bootstrap_debian() {
 
   # Update and install packages using apt
   chroot "$ROOTFS" apt update
-  chroot "$ROOTFS" apt install -y --fix-broken linux-image-generic zsh curl wget git sudo locales python3-full python3-pip python3-venv
+  chroot "$ROOTFS" apt install -y --fix-broken linux-image-generic zsh curl wget git sudo locales python3-full python3-pip python3-venv live-boot live-config
 
   # Unmount
   umount -l "$ROOTFS/dev/random" "$ROOTFS/dev/urandom" "$ROOTFS/dev/pts" "$ROOTFS/dev/shm" "$ROOTFS/dev" "$ROOTFS/proc" "$ROOTFS/sys" 2>/dev/null || true
@@ -1367,7 +1371,13 @@ fi
 if echo "$tools" | grep -q "docker"; then
   if ! command -v docker >/dev/null 2>&1; then
     log "Installing Docker..."
-    apt install -y docker.io
+    if command -v apt >/dev/null 2>&1; then
+      apt install -y docker.io
+    elif command -v pacman >/dev/null 2>&1; then
+      pacman -Sy --noconfirm docker
+    elif command -v dnf >/dev/null 2>&1; then
+      dnf -y install docker
+    fi
     systemctl enable docker --now
   fi
 fi
@@ -1404,7 +1414,7 @@ echo "Custom chroot done."
 EOS
 
 # apply replacements
-sed -i "s/__USER__/${userName}/g; s/__HOST__/${hostName}/g" "$ROOTFS/tmp/customize.sh"
+sed -i "s|__USER__|${userNameSed}|g; s|__HOST__|${hostNameSed}|g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__NVIDIA__/${includeNvidia ? 1 : 0}/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__BUILD_TYPE__/${buildType}/g" "$ROOTFS/tmp/customize.sh"
 sed -i "s/__FLATPAKS__/${flatpaks.map(s => `"${s}"`).join(" ")}/g" "$ROOTFS/tmp/customize.sh"
@@ -1430,8 +1440,8 @@ cat > "$ROOTFS/etc/vibe/config.json" << JSON
   "flatpak": ${enableFlatpak},
   "nvidia": ${includeNvidia},
   "ollama": ${installOllama},
-  "user": "${userName}",
-  "hostname": "${hostName}"
+  "user": ${JSON.stringify(userName)},
+  "hostname": ${JSON.stringify(hostName)}
 }
 JSON
 
@@ -1454,14 +1464,21 @@ mkdir -p "$WORKDIR/iso-root"
 mksquashfs "$ROOTFS" "$WORKDIR/iso-root/filesystem.squashfs" -comp zstd -Xcompression-level 19 -noappend
 
 mkdir -p "$WORKDIR/iso/boot/grub"
-cp -f "$ROOTFS/boot/vmlinuz"* "$WORKDIR/iso/boot/vmlinuz" 2>/dev/null || true
-cp -f "$ROOTFS/boot/initrd"* "$WORKDIR/iso/boot/initrd.img" 2>/dev/null || true
+KERNEL_SRC="$(ls -1 "$ROOTFS"/boot/vmlinuz* "$ROOTFS"/boot/*vmlinuz* 2>/dev/null | head -n1 || true)"
+INITRD_SRC="$(ls -1 "$ROOTFS"/boot/initrd* "$ROOTFS"/boot/initramfs* 2>/dev/null | head -n1 || true)"
+if [[ -z "$KERNEL_SRC" || -z "$INITRD_SRC" ]]; then
+  err "Kernel or initrd was not found in $ROOTFS/boot"
+  err "Cannot build a bootable ISO."
+  exit 1
+fi
+cp -f "$KERNEL_SRC" "$WORKDIR/iso/boot/vmlinuz"
+cp -f "$INITRD_SRC" "$WORKDIR/iso/boot/initrd.img"
 
 cat > "$WORKDIR/iso/boot/grub/grub.cfg" << 'GRUB'
 set default=0
 set timeout=5
 menuentry "Vibe Linux Live" {
-  linux /boot/vmlinuz boot=live quiet splash
+  linux /boot/vmlinuz boot=live components username=${userName} hostname=${hostName} quiet splash
   initrd /boot/initrd.img
 }
 GRUB
@@ -1471,15 +1488,13 @@ cp "$WORKDIR/iso-root/filesystem.squashfs" "$WORKDIR/iso/live/filesystem.squashf
 
 log "Creating ISO..."
 OUT="$OUTDIR/vibe-linux-${distro}-$(date +%Y%m%d).iso"
-xorriso -as mkisofs \
-  -r -V "VIBE_LINUX" \
-  -o "$OUT" \
-  -J -joliet-long -l \
-  -udf \
-  "$WORKDIR/iso" || {
-  warn "xorriso failed, check logs"
+if command -v grub-mkrescue >/dev/null 2>&1; then
+  grub-mkrescue -o "$OUT" "$WORKDIR/iso"
+else
+  err "grub-mkrescue is required for a bootable hybrid ISO"
+  err "Install grub-mkrescue (usually from grub-common / grub2-tools)."
   exit 1
-}
+fi
 
 log "Done! ISO at: $OUT"
 `;
